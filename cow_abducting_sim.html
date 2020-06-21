@@ -340,6 +340,48 @@
                 var x = this.pos[0] - view[0];
                 var y = this.pos[1] - view[1];
                 
+                // Draw jets last so we can see them
+                if (this.jets[0] > 0) {
+                    // to do: make transparancy a function of force
+                    ctx.fillStyle = "#ff3333";
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x - 1.5 * this.size[0], y + this.size[1] / 5);
+                    ctx.lineTo(x - 1.7 * this.size[0], y);
+                    ctx.lineTo(x - 1.5 * this.size[0], y - this.size[1] / 5);
+                    ctx.lineTo(x, y);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+                if (this.jets[1] > 0) {
+                    // to do: make transparancy a function of force
+                    ctx.fillStyle = "#ff333380";
+                    triangle(x, y,
+                        x-this.size[0] / 5, y + this.size[1],
+                        x+this.size[0] / 5, y + this.size[1]);
+                    ctx.fillStyle = "#ff3333";
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x+this.size[0] / 5, y + 1.5 * this.size[1]);
+                    ctx.lineTo(x,                  y + 1.7 * this.size[1]);
+                    ctx.lineTo(x-this.size[0] / 5, y + 1.5 * this.size[1]);
+                    ctx.lineTo(x, y);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+                if (this.jets[2] > 0) {
+                    // to do: make transparancy a function of force
+                    ctx.fillStyle = "#ff3333";
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x+1.5 * this.size[0], y + this.size[1] / 5);
+                    ctx.lineTo(x+1.7 * this.size[0], y);
+                    ctx.lineTo(x+1.5 * this.size[0], y - this.size[1] / 5);
+                    ctx.lineTo(x, y);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
                 // Draw beams behind body
                 for (var i = 0; i < this.beams.length; i++) {
                     // transparent green beam
@@ -369,29 +411,6 @@
                 //body stripe
                 fill(222, 22, 22);
                 ellipse(x, y, this.size[0], 2);
-                
-                // Draw jets last so we can see them
-                if (this.jets[0] > 0) {
-                    // to do: make transparancy a function of force
-                    ctx.fillStyle = "#ff333380";
-                    triangle(x, y,
-                        x-this.size[0], y + this.size[1] / 5,
-                        x-this.size[0], y - this.size[1] / 5);
-                }
-                if (this.jets[1] > 0) {
-                    // to do: make transparancy a function of force
-                    ctx.fillStyle = "#ff333380";
-                    triangle(x, y,
-                        x-this.size[0] / 5, y + this.size[1],
-                        x+this.size[0] / 5, y + this.size[1]);
-                }
-                if (this.jets[2] > 0) {
-                    // to do: make transparancy a function of force
-                    ctx.fillStyle = "#ff333380";
-                    triangle(x, y,
-                        x+this.size[0], y + this.size[1] / 5,
-                        x+this.size[0], y - this.size[1] / 5);
-                }
             },
             "updatePhysics" : updatePhysicsSub,
             "update" : function() {
