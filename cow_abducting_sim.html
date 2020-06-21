@@ -68,7 +68,7 @@
                     var x = this.pos[0] - view[0];
                     var y = this.pos[1] - view[1];
                     
-                    //cocpit
+                    //cockpit
                     fill(95, 199, 199);
                     ellipse(x, y - this.size[1] / 2, this.size[0] * 3 / 4, this.size[1] );
                     //body
@@ -223,15 +223,6 @@
                 var xOffset = -this.view[0];
                 var yOffset = -this.view[1];
                 
-                // // Static background
-                // // background(0, 0, 0);
-                // ctx.fillStyle = "#000";
-                // rect(0, 0, this.size[0], this.size[1]);
-                // stroke(0, 0, 0);
-                // // Ground
-                // fill(52, 143, 52);
-                // rect(0 + xOffset, this.size[1] - 100 + yOffset, this.size[0], 100);
-                
                 for (var i = 0; i < this.objects.length; i++) {
                     if (this.objects[i].draw) {
                         this.objects[i].draw(this.view);
@@ -346,7 +337,7 @@
                 
                 // Draw jets last so we can see them
                 if (this.jets[0] > 0) {
-                    // to do: make transparancy a function of force
+                    // to do: make transparency a function of force
                     ctx.fillStyle = "#ff3333";
                     ctx.beginPath();
                     ctx.moveTo(x, y);
@@ -358,7 +349,7 @@
                     ctx.closePath();
                 }
                 if (this.jets[1] > 0) {
-                    // to do: make transparancy a function of force
+                    // to do: make transparency a function of force
                     ctx.fillStyle = "#ff333380";
                     triangle(x, y,
                         x-this.size[0] / 5, y + this.size[1],
@@ -374,7 +365,7 @@
                     ctx.closePath();
                 }
                 if (this.jets[2] > 0) {
-                    // to do: make transparancy a function of force
+                    // to do: make transparency a function of force
                     ctx.fillStyle = "#ff3333";
                     ctx.beginPath();
                     ctx.moveTo(x, y);
@@ -394,8 +385,8 @@
                     x-this.beams[i], y + this.beamLength,
                     x+this.beams[i], y+ this.beamLength);
                 }
-                
-                //cocpit
+
+                // cockpit
                 fill(95, 199, 199);
                 ellipse(x, y - this.size[1] / 2, this.size[0] * 3 / 4, this.size[1] * 5 / 4);
                 ctx.beginPath();
@@ -426,7 +417,7 @@
                 } else {
                     var xErr = this.goal[0] - this.pos[0];
                     if (xErr < 3 * this.v[0]) {
-                        // Accellerate toward goal
+                        // Accelerate toward goal
                         this.jets[2] = 1;
                     } else {
                         // Coast
@@ -440,7 +431,7 @@
                 } else {
                     var xErr = this.goal[0] - this.pos[0];
                     if (xErr > 3 * this.v[0]) {
-                        // Accellerate toward goal
+                        // Accelerate toward goal
                         this.jets[0] = 1;
                     } else {
                         // Coast
@@ -466,7 +457,7 @@
                 this.a[0] = -0.1*this.v[0] + this.jets[0] - this.jets[2];
                 this.a[1] = 1 - 0.1*this.v[1] - this.jets[1];
                 
-                // Move based on accelleration
+                // Move based on acceleration
                 this.updatePhysics();
 
                 // Update tractor beams
