@@ -2,14 +2,15 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Cow Abducting Sim</title>
-    <style>* { padding: 0; margin: 0; } canvas { background: #eeeeee; display: block; margin: 0 auto; }</style>
+    <title>Cow Abducting Simulator</title>
+    <style>* { padding: 0; margin: 0; } canvas { margin: 5; background: #eeeeee; display: block; border: solid 3px blue; }</style>
 </head>
 <body>
-    
-    <canvas id="myCanvas" width="800" height="600"></canvas>
+    <div width="100%" style="align-content:center">
+        <canvas id="myCanvas"></canvas>
+    </div>
     <div style="text-align: center;">
-        <h1>Cow Abducting Sim</h1>
+        <h1>Cow Abducting Simulator</h1>
         <p>Try moving your mouse around and clicking. It'll get more fun when we add cows. :)</p>
         <p>By Oliver, Ben, and Carter Martin</p>
     </div>
@@ -117,22 +118,16 @@
         var canvas = document.getElementById("myCanvas");
         var ctx = canvas.getContext("2d");
         
+        ctx.canvas.width = innerWidth - 100;
+        ctx.canvas.height = innerHeight * .9;
+        
         var rightPressed = false;
-        var leftPressed = false;
+        var leftPressed  = false;
+        var upPressed    = false;
         
         function ellipse (x, y, w, h) {
             ctx.beginPath();
             ctx.ellipse(x, y, w, h, 0, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-        };
-        function triangle (x1, y1, x2, y2, x3, y3) {
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x1, y1);
             ctx.fill();
             ctx.stroke();
             ctx.closePath();
@@ -186,21 +181,23 @@
                 // console.log("drawing world");
                 
                 // Update viewport to keep ship in center 1/2 of screen if possible
-                for (var i = 0; i < 2; i++) {
-                    var max = this.view[i+2];
-                    var goal = this.focus.pos[i] - max/2;
-                    var err = this.view[i] - goal;
-                    if (err > max/4) {
-                        this.view[i] = goal + max/4;
-                    }
-                    if (err < -max/4) {
-                        this.view[i] = goal - max/4;
-                    }
-                    if (this.view[i] < 0) {
-                        this.view[i] = 0;
-                    }
-                    if (this.view[i] > this.size[i] - this.view[i+2]) {
-                        this.view[i] = this.size[i] - this.view[i+2];
+                if (this.focus) {
+                    for (var i = 0; i < 2; i++) {
+                        var max = this.view[i+2];
+                        var goal = this.focus.pos[i] - max/2;
+                        var err = this.view[i] - goal;
+                        if (err > max/4) {
+                            this.view[i] = goal + max/4;
+                        }
+                        if (err < -max/4) {
+                            this.view[i] = goal - max/4;
+                        }
+                        if (this.view[i] < 0) {
+                            this.view[i] = 0;
+                        }
+                        if (this.view[i] > this.size[i] - this.view[i+2]) {
+                            this.view[i] = this.size[i] - this.view[i+2];
+                        }
                     }
                 }
                 var xOffset = -this.view[0];
@@ -236,12 +233,10 @@
                     ctx.fillRect(0+xOffset, 0+yOffset, this.size[0], this.size[1]);
                     for (var i = 0; i < this.stars.length; i++) {
                         var star = this.stars[i];
-                        var visible = (
-                            (star[0] + xOffset + star[2] > 0) &&
-                            (star[0] + xOffset - star[2] < canvas.width) &&
-                            (star[1] + yOffset + star[2] > 0) &&
-                            (star[1] + yOffset - star[2] < canvas.height)
-                        );
+                        var visible = (star[0] + xOffset + star[2] > 0) &&
+                        (star[0] + xOffset - star[2] < canvas.width) &&
+                        (star[1] + yOffset + star[2] > 0) &&
+                        (star[1] + yOffset - star[2] < canvas.height);
                         if (visible) {
                             ctx.beginPath();
                             ctx.fillStyle = "#eee";
@@ -259,7 +254,7 @@
             return starField;
         }
         world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 10000));
-
+        
         function createGroundBackground(x, y, w, h) {
             var obj = {
                 pos   : [x, y],
@@ -277,7 +272,7 @@
         }
         // Bottom 10% of world is ground
         world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
-
+        
         var updatePhysicsSub = function() {
             // Move with previous speed
             for (var i = 0; i < 2; i++) {
@@ -297,199 +292,235 @@
             for (var i = 0; i < 2; i++) {
                 this.v[i] = this.v[i] + this.a[i];
             }
-
+            
             return;
         };
-
-        var ship = {
-            "pos"  : [500, 500],
-            "size" : [75, 40],
-            "v"    : [0, 0],
-            "a"    : [0, 0],
-            "maxV" : [5, 5],
-            "goal" : [world.size[2]/2, world.size[2]/2],
-            "jets" : [0, 0, 0],
-            "beams" : [],
-            "beamStartSize" : 50,
-            "beamLength" : 200,
-            "draw": function(view) {
-                // console.log("drawing ship");
-                
-                var x = this.pos[0] - view[0];
-                var y = this.pos[1] - view[1];
-                
-                // Draw jets last so we can see them
-                if (this.jets[0] > 0) {
-                    // to do: make transparency a function of force
-                    ctx.fillStyle = "#ff3333";
+        
+        function createShip () {
+            
+            var ship = {
+                "pos"  : [0, 0],
+                "size" : [75, 40],
+                "v"    : [0, 0],
+                "a"    : [0, 0],
+                "maxV" : [5, 5],
+                "goal" : [0, 0],
+                "jets" : [0, 0, 0],
+                "beams" : [],
+                "beamStartSize" : 50,
+                "beamLength" : 200,
+                "mass" : 1000,
+                "draw": function(view) {
+                    // console.log("drawing ship");
+                    
+                    var x = this.pos[0] - view[0];
+                    var y = this.pos[1] - view[1];
+                    
+                    // Draw jets last so we can see them
+                    if (this.jets[0] > 0) {
+                        // to do: make transparency a function of force
+                        ctx.fillStyle = "#ff3333";
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - 1.5 * this.size[0], y + this.size[1] / 5);
+                        ctx.lineTo(x - 1.7 * this.size[0], y);
+                        ctx.lineTo(x - 1.5 * this.size[0], y - this.size[1] / 5);
+                        ctx.lineTo(x, y);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    if (this.jets[1] > 0) {
+                        // to do: make transparency a function of force
+                        ctx.fillStyle = "#ff3333";
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x+this.size[0] / 5, y + 1.5 * this.size[1]);
+                        ctx.lineTo(x,                  y + 1.7 * this.size[1]);
+                        ctx.lineTo(x-this.size[0] / 5, y + 1.5 * this.size[1]);
+                        ctx.lineTo(x, y);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    if (this.jets[2] > 0) {
+                        // to do: make transparency a function of force
+                        ctx.fillStyle = "#ff3333";
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x+1.5 * this.size[0], y + this.size[1] / 5);
+                        ctx.lineTo(x+1.7 * this.size[0], y);
+                        ctx.lineTo(x+1.5 * this.size[0], y - this.size[1] / 5);
+                        ctx.lineTo(x, y);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    
+                    // Draw beams behind body
+                    for (var i = 0; i < this.beams.length; i++) {
+                        // transparent green beam
+                        ctx.fillStyle = "#00ff0080";
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - this.beams[i], y + this.beamLength),
+                        ctx.lineTo(x + this.beams[i], y + this.beamLength);
+                        ctx.lineTo(x, y);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    
+                    
+                    //body
+                    fill(230, 230, 230);
+                    // ellipse(x, y, this.size[0], this.size[1]);
                     ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x - 1.5 * this.size[0], y + this.size[1] / 5);
-                    ctx.lineTo(x - 1.7 * this.size[0], y);
-                    ctx.lineTo(x - 1.5 * this.size[0], y - this.size[1] / 5);
-                    ctx.lineTo(x, y);
+                    ctx.ellipse(x, y, this.size[0], this.size[1], 0, 1.7 * Math.PI, 1.3 * Math.PI);
                     ctx.fill();
+                    ctx.stroke();
                     ctx.closePath();
-                }
-                if (this.jets[1] > 0) {
-                    // to do: make transparency a function of force
-                    ctx.fillStyle = "#ff333380";
-                    triangle(x, y,
-                        x-this.size[0] / 5, y + this.size[1],
-                        x+this.size[0] / 5, y + this.size[1]);
-                    ctx.fillStyle = "#ff3333";
+                    //body stripe
+                    fill(222, 22, 22);
+                    ellipse(x, y, this.size[0], 2);
+                    
+                    // cockpit
+                    fill(95, 199, 199);
                     ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x+this.size[0] / 5, y + 1.5 * this.size[1]);
-                    ctx.lineTo(x,                  y + 1.7 * this.size[1]);
-                    ctx.lineTo(x-this.size[0] / 5, y + 1.5 * this.size[1]);
-                    ctx.lineTo(x, y);
+                    ctx.ellipse(x, y - this.size[1] / 2, this.size[0] * .75, this.size[1] * 1.25, 0, Math.PI, 2 * Math.PI);
                     ctx.fill();
+                    ctx.stroke();
                     ctx.closePath();
-                }
-                if (this.jets[2] > 0) {
-                    // to do: make transparency a function of force
-                    ctx.fillStyle = "#ff3333";
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x+1.5 * this.size[0], y + this.size[1] / 5);
-                    ctx.lineTo(x+1.7 * this.size[0], y);
-                    ctx.lineTo(x+1.5 * this.size[0], y - this.size[1] / 5);
-                    ctx.lineTo(x, y);
-                    ctx.fill();
-                    ctx.closePath();
-                }
-
-                // Draw beams behind body
-                for (var i = 0; i < this.beams.length; i++) {
-                    // transparent green beam
-                    ctx.fillStyle = "#00ff0080";
-                    triangle(x, y,
-                    x-this.beams[i], y + this.beamLength,
-                    x+this.beams[i], y+ this.beamLength);
-                }
-
-                // cockpit
-                fill(95, 199, 199);
-                ellipse(x, y - this.size[1] / 2, this.size[0] * 3 / 4, this.size[1] * 5 / 4);
-                ctx.beginPath();
-                ctx.ellipse(x, y - this.size[1] / 2, this.size[0] * .75, this.size[1] * 1.25, 0, 0.3 * Math.PI, 1.7 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-                ctx.closePath();
-
-                //body
-                fill(230, 230, 230);
-                ellipse(x, y, this.size[0], this.size[1]);
-                ctx.beginPath();
-                ctx.ellipse(x, y, this.size[0], this.size[1], 0, 0.3 * Math.PI, 1.7 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-                ctx.closePath();
-                //body stripe
-                fill(222, 22, 22);
-                ellipse(x, y, this.size[0], 2);
-            },
-            "updatePhysics" : updatePhysicsSub,
-            "update" : function() {
-                
-                // Fire horizontal jets toward goal
-                if (this.v[0] < -this.maxV[0]) {
-                    // Emergency shut off
-                    this.jets[2] = 0;
-                } else {
-                    var xErr = this.goal[0] - this.pos[0];
-                    if (xErr < 3 * this.v[0]) {
-                        // Accelerate toward goal
-                        this.jets[2] = 1;
-                    } else {
-                        // Coast
+                },
+                "updatePhysics" : updatePhysicsSub,
+                "update" : function() {
+                    
+                    // Fire horizontal jets toward goal
+                    if (this.v[0] < -this.maxV[0]) {
+                        // Emergency shut off
                         this.jets[2] = 0;
-                    }
-                }
-
-                if (this.v[0] > this.maxV[0]) {
-                    // Emergency shut off
-                    this.jets[0] = 0;
-                } else {
-                    var xErr = this.goal[0] - this.pos[0];
-                    if (xErr > 3 * this.v[0]) {
-                        // Accelerate toward goal
-                        this.jets[0] = 1;
                     } else {
-                        // Coast
+                        var xErr = this.goal[0] - this.pos[0];
+                        if (xErr < 3 * this.v[0]) {
+                            // Accelerate toward goal
+                            this.jets[2] = 1;
+                        } else {
+                            // Coast
+                            this.jets[2] = 0;
+                        }
+                    }
+                    
+                    if (this.v[0] > this.maxV[0]) {
+                        // Emergency shut off
                         this.jets[0] = 0;
-                    }
-                }
-                
-                // Fire vertical jets toward goal
-                if (this.v[0] <= -this.maxV[0]) {
-                    // Emergency thruster shut off
-                    this.jets[1] = 0;
-                } else {
-                    var yErr = this.goal[1] - this.pos[1];
-                    if (yErr < 3 * this.v[1]) {
-                        // full power
-                        this.jets[1] = 3;
                     } else {
+                        var xErr = this.goal[0] - this.pos[0];
+                        if (xErr > 3 * this.v[0]) {
+                            // Accelerate toward goal
+                            this.jets[0] = 1;
+                        } else {
+                            // Coast
+                            this.jets[0] = 0;
+                        }
+                    }
+                    
+                    // Fire vertical jets toward goal
+                    if (this.v[0] <= -this.maxV[0]) {
+                        // Emergency thruster shut off
                         this.jets[1] = 0;
-                    }
-                }
-                
-                // Adjust acceleration
-                this.a[0] = -0.1*this.v[0] + this.jets[0] - this.jets[2];
-                this.a[1] = 1 - 0.1*this.v[1] - this.jets[1];
-                
-                // Move based on acceleration
-                this.updatePhysics();
-
-                // Update tractor beams
-                for (var i = 0; i < this.beams.length; i++) {
-                    this.beams[i] = this.beams[i] - 1;
-                }
-                // Delete empty beams
-                var beamNum = 0;
-                while (beamNum < this.beams.length) {
-                    if (this.beams[beamNum] <= 0) {
-                        this.beams.splice(beamNum, 1);
                     } else {
-                        beamNum = beamNum + 1;
+                        var yErr = this.goal[1] - this.pos[1];
+                        if (yErr < 3 * this.v[1]) {
+                            // full power
+                            this.jets[1] = 3;
+                        } else {
+                            this.jets[1] = 0;
+                        }
                     }
-                }
-
-                // Try to pick up cows
-                for (var i = 0; i < world.objects.length; i++) {
-                    // Check if mob is in beam
-                    if (world.objects[i].v) {
-                        var mob = world.objects[i];
-                        if (mob.pos[1] > this.pos[1] && mob.pos[1] < this.pos[1] + this.beamLength) {
-                            // Could be in beam
-                            for (var j = 0; j < this.beams.length; j++) {
-                                var beamWidth = this.beams[j];
-                                if (mob.pos[0] > this.pos[0] - beamWidth &&
-                                mob.pos[0] < this.pos[0] + beamWidth
-                                ) {
-                                    // In beam
-                                    mob.v[1] = mob.v[1] - 1;
+                    
+                    // Adjust acceleration
+                    this.a[0] = -0.1*this.v[0] + this.jets[0] - this.jets[2];
+                    this.a[1] = 1 - 0.1*this.v[1] - this.jets[1];
+                    
+                    // Move based on acceleration
+                    this.updatePhysics();
+                    
+                    // Update tractor beams
+                    for (var i = 0; i < this.beams.length; i++) {
+                        this.beams[i] = this.beams[i] - 1;
+                    }
+                    // Delete empty beams
+                    var beamNum = 0;
+                    while (beamNum < this.beams.length) {
+                        if (this.beams[beamNum] <= 0) {
+                            this.beams.splice(beamNum, 1);
+                        } else {
+                            beamNum = beamNum + 1;
+                        }
+                    }
+                    
+                    // Try to pick up cows
+                    for (var i = 0; i < world.objects.length; i++) {
+                        // Check if mob is in beam
+                        if (world.objects[i].v) {
+                            var mob = world.objects[i];
+                            if (mob.pos[1] > this.pos[1] && mob.pos[1] < this.pos[1] + this.beamLength) {
+                                // Could be in beam
+                                for (var j = 0; j < this.beams.length; j++) {
+                                    var beamWidth = this.beams[j];
+                                    if (mob.pos[0] > this.pos[0] - beamWidth &&
+                                    mob.pos[0] < this.pos[0] + beamWidth
+                                    ) {
+                                        // In beam
+                                        mob.v[1] = mob.v[1] - 1;
+                                    }
                                 }
                             }
                         }
-                    }
-                }                
-            },
-            handleMouseMove : function(x, y) {
-                this.goal = [x, y];   
-                return;
-            },
-            handleClick : function(x, y) {
-                this.beams.push(this.beamStartSize);
-                return;
-            }
-        };
-        world.objects.push(ship);
-        world.focus = ship;
-        
+                    }                
+                },
+                handleMouseMove : function(x, y) {
+                    this.goal = [x, y];   
+                    return;
+                },
+                handleClick : function(x, y) {
+                    this.beams.push(this.beamStartSize);
+                    return;
+                }
+            };
+            return ship;
         }
+        
+        function createSplashScreen() {
+            var o = {
+                hidden : false,
+                draw: function(view) {
+                    if (this.hidden) {
+                        return;
+                    }      
+                    ctx.font = "30px Arial";
+                    ctx.fillStyle = "#fff";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Cow Abducting Sim", canvas.width/2, canvas.height/2);
+                    
+                    ctx.font = "16px Arial";
+                    ctx.fillStyle = "#fff";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Click to Start", canvas.width/2, canvas.height * .75);
+                    return;
+                },
+                handleClick : function(x, y) {
+                    if (this.hidden) {
+                        return;
+                    }
+                    this.hidden = true;
+                    var ship = createShip();
+                    world.objects.push(ship);
+                    world.focus = ship;
+                    return;
+                }
+            };
+            return o;
+        }
+        
+        // Must be last object on stack
+        world.objects.push(createSplashScreen());
         
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
@@ -524,7 +555,7 @@
             
             world.handleClick(relativeX, relativeY);
         }
-
+        
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
