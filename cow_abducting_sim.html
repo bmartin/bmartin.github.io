@@ -11,7 +11,16 @@
     </div>
     <div style="text-align: center;">
         <h1>Cow Abducting Simulator</h1>
-        <p>Try moving your mouse around and clicking. It'll get more fun when we add cows. :)</p>
+        <dl>
+            <dt>Autopilot mode:</dt>
+            <dd>Ship will follow your mouse cursor.</dd>
+            <dt>Manual mode:</dt>
+            <dd>Use arrow keys or "w", "a", "s", "d" to control the rockets yourself.</dd>
+            <dt>Pause:</dt>
+            <dd>Press "Esc" to pause.</dd>
+        </dl>
+
+        <p> Try moving your mouse around and clicking. It'll get more fun when we add cows. :)</p>
         <p>By Oliver, Ben, and Carter Martin</p>
     </div>
     <!--
@@ -685,9 +694,28 @@
         document.addEventListener("keyup", keyUpHandler, false);
         document.addEventListener("mousemove", mouseMoveHandler, false);
         document.addEventListener("click", clickHandler, false);
+
+        var paused = false;
+        var last_now_ms = performance.now();
+
+        function startPause () {
+            paused = true;
+        }
+        function endPause () {
+            paused = false;
+            last_now_ms = performance.now();
+            draw(performance.now());
+        }
         
         function keyDownHandler(e) {
-            world.handleKeyDown(e);
+            if (e.keyCode == 27) {
+                startPause();
+            } else {
+                if (paused) {
+                    endPause();
+                }
+                world.handleKeyDown(e);
+            }
         }
         function keyUpHandler(e) {
             world.handleKeyUp(e);
@@ -699,21 +727,36 @@
             world.handleMouseMove(relativeX, relativeY);
         }
         function clickHandler(e) {
+            if (paused) {
+                endPause();
+            }
             var relativeX = e.clientX - canvas.offsetLeft;
             var relativeY = e.clientY - canvas.offsetTop;
             
             world.handleClick(relativeX, relativeY);
         }
         
-        var last_now_ms = performance.now();
         function draw(now_ms) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            world.update(now_ms - last_now_ms);
-            world.draw();
-            
-            last_now_ms = now_ms;
-            requestAnimationFrame(draw);
+            if (now_ms - last_now_ms > 1000) {
+                // At lease a second passed. Probably tab was in background.
+                startPause();
+            }
+            if (paused) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "30px Arial";
+                ctx.fillStyle = "#000";
+                ctx.textAlign = "center";
+                ctx.fillText("Paused", canvas.width/2, canvas.height/2);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                world.update(now_ms - last_now_ms);
+                world.draw();
+                
+                last_now_ms = now_ms;
+
+                requestAnimationFrame(draw);
+            }
         }
         
         draw(performance.now());
