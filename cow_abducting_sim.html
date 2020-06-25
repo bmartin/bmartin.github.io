@@ -161,6 +161,22 @@
                 
                 return;
             },
+            handleKeyDown : function(e) {
+                for (var i = 0; i < this.objects.length; i++) {
+                    if (this.objects[i].handleKeyDown) {
+                        this.objects[i].handleKeyDown(e);
+                    }
+                }
+                return;
+            },
+            handleKeyUp : function(e) {
+                for (var i = 0; i < this.objects.length; i++) {
+                    if (this.objects[i].handleKeyUp) {
+                        this.objects[i].handleKeyUp(e);
+                    }
+                }
+                return;
+            },
             "draw": function() {
                 // console.log("drawing world");
                 
@@ -342,6 +358,7 @@
                 "a"    : [0, 0],
                 "mass_kg" : mass_kg,
                 "maxV" : [50, 50],
+                "autopilot" : true,
                 "goal" : [0, 0],
                 "jets" : [0, 0, 0],
                 "jetMaxForce" : [1 * liftingForce, 3 * liftingForce, 1 * liftingForce],
@@ -492,7 +509,9 @@
                 },
                 "update" : function(delta_ms) {
 
-                    this.updateAI(delta_ms);
+                    if (this.autopilot) {
+                        this.updateAI(delta_ms);
+                    }
                     
                     // Adjust acceleration based on input forces
                     var f = [0, 0];
@@ -559,6 +578,8 @@
                     }                
                 },
                 handleMouseMove : function(x, y) {
+                    this.autopilot = true;
+
                     // Scale goal extra when in the border region
                     this.goal = [x, y];
                     for (var i = 0; i < 2; i++) {
@@ -580,7 +601,49 @@
                 handleClick : function(x, y) {
                     this.beams.push(this.beamStartSize);
                     return;
+                },
+                handleKeyDown : function(e) {
+                    if (this.autopilot) {
+                        // Turn off all jets and turn off autopilot
+                        for (var i = 0; i < this.jets.length; i++) {
+                            this.jets[i] = 0;
+                        }
+                        this.autopilot = false;
+                    }
+                    if (e.keyCode == 39 || e.keyCode == 68) {
+                        // pushed right
+                        this.jets[0] = 1;
+                    } else if(e.keyCode == 37 || e.keyCode == 65) {
+                        // pushed left
+                        this.jets[2] = 1;
+                    } else if(e.keyCode == 38 || e.keyCode == 87) {
+                        // pushed up
+                        this.jets[1] = 1;
+                    } else if(e.keyCode == 66) {
+                        // pushed b
+                        world.drawBoundingBoxes = true;
+                    } else {
+                        console.log(e.keyCode);
+                    }
+                    return;
+                },
+                handleKeyUp : function(e) {
+                    if (e.keyCode == 39 || e.keyCode == 68) {
+                        // pushed right or d
+                        this.jets[0] = 0;
+                    } else if(e.keyCode == 37 || e.keyCode == 65) {
+                        // pushed left or a
+                        this.jets[2] = 0;
+                    } else if(e.keyCode == 38 || e.keyCode == 87) {
+                        // pushed up or w
+                        this.jets[1] = 0;
+                    } else if(e.keyCode == 66) {
+                        // pushed b
+                        world.drawBoundingBoxes = false;
+                    }
+                    return;
                 }
+
             };
             return ship;
         }
@@ -624,20 +687,10 @@
         document.addEventListener("click", clickHandler, false);
         
         function keyDownHandler(e) {
-            if(e.keyCode == 39) {
-                rightPressed = true;
-            }
-            else if(e.keyCode == 37) {
-                leftPressed = true;
-            }
+            world.handleKeyDown(e);
         }
         function keyUpHandler(e) {
-            if(e.keyCode == 39) {
-                rightPressed = false;
-            }
-            else if(e.keyCode == 37) {
-                leftPressed = false;
-            }
+            world.handleKeyUp(e);
         }
         function mouseMoveHandler(e) {
             var relativeX = e.clientX - canvas.offsetLeft;
