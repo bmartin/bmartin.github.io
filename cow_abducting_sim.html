@@ -124,30 +124,7 @@
         var rightPressed = false;
         var leftPressed  = false;
         var upPressed    = false;
-        
-        function ellipse (x, y, w, h) {
-            ctx.beginPath();
-            ctx.ellipse(x, y, w, h, 0, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-        };
-        function fill (r, g, b, a) {
-            if (a) {
-                ctx.fillStyle =`rgb(${r}, ${g}, ${b}, ${a})`;
-            } else {
-                ctx.fillStyle =`rgb(${r}, ${g}, ${b})`;
-            }
-        }
-        function stroke (r, g, b, a) {
-            ctx.strokeStyle =`rgb(${r}, ${g}, ${b}, ${a})`;
-        }
-        function rect (x, y, w, h) {
-            ctx.beginPath();
-            ctx.rect(x, y, w, h);
-            ctx.fill();
-            ctx.closePath();
-        }
+
         var world = {
             "size" : [2000, 1000],
             "objects" : [],
