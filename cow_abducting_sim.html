@@ -334,11 +334,11 @@
                 if (this.pos[i] < 0) {
                     this.pos[i] = 0;
                     // Bounce off side wall
-                    this.v[i] = Math.abs(this.v[i]);
+                    this.v[i] = this.bounce_rho * Math.abs(this.v[i]);
                 }
                 if (this.pos[i] + this.size[i] > world.size[i]) {
                     this.pos[i] = world.size[i] - this.size[i];
-                    this.v[i] = -1 * Math.abs(this.v[i]);
+                    this.v[i] = -1 * this.bounce_rho * Math.abs(this.v[i]);
                 }
             }
             
@@ -369,6 +369,7 @@
                 "v"    : [0, 0],
                 "a"    : [0, 0],
                 "mass_kg" : mass_kg,
+                "bounce_rho" : 0.1,
                 "draw": function(box) {
                     // console.log("drawing ship");
                     
@@ -476,6 +477,7 @@
                 "v"    : [0, 0],
                 "a"    : [0, 0],
                 "mass_kg" : mass_kg,
+                "bounce_rho" : 0.9,
                 "maxV" : [50, 50],
                 "autopilot" : true,
                 "goal" : [0, 0],
