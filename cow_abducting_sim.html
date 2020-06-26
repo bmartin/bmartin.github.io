@@ -19,7 +19,7 @@
             <dt>Pause:</dt>
             <dd>Press "Esc" to pause.</dd>
         </dl>
-
+        
         <p> Try moving your mouse around and clicking. It'll get more fun when we add cows. :)</p>
         <p>By Oliver, Ben, and Carter Martin</p>
     </div>
@@ -133,7 +133,7 @@
         var rightPressed = false;
         var leftPressed  = false;
         var upPressed    = false;
-
+        
         var w = 200;
         var h = 100;
         var world = {
@@ -192,7 +192,7 @@
                 // Update viewport to keep focus item in center 1/2 of screen if possible
                 if (this.focus) {
                     // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
-
+                    
                     this.zoom = 100 / this.focus.size[0];
                     //  *
                     //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
@@ -203,7 +203,7 @@
                     // }
                     this.view[2] = canvas.width  / this.zoom;
                     this.view[3] = canvas.height / this.zoom;
-
+                    
                     // Now center view. Desired state is for view and focus to have same center:
                     //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
                     // or
@@ -232,7 +232,7 @@
                     this.view[2] = canvas.height / this.zoom;
                     this.view[3] = canvas.width  / this.zoom;
                 }
-
+                        
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
                     if (o.draw && !o.hidden) {
@@ -272,6 +272,7 @@
                 return;
             }
         };
+       
         function createStarField(x, y, w, h, numStars) {
             var starField = {
                 pos : [x, y],
@@ -280,7 +281,7 @@
                 "draw": function(box) {                
                     ctx.fillStyle = "#000";
                     ctx.fillRect(box[0], box[1], box[2], box[3]);
-
+                    
                     // Star position obeys zoom, but size does not.
                     var zoom = box[2] / this.size[0];
                     for (var i = 0; i < this.stars.length; i++) {
@@ -325,7 +326,7 @@
         
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
-
+            
             // Move with previous speed
             for (var i = 0; i < 2; i++) {
                 // Move in current direction
@@ -349,17 +350,126 @@
             return;
         };
         
-        function createShip (width_m) {
+        function createHayBale (startX, startY) {
+            
+            // 16" x 18" x 4', 100 lb
+            var w_m = 4 * 12 * 2.54 / 100;
+            var h_m = 16 * 2.54 / 100;
+            var d_m = 18 * 2.54 / 100;
 
+            // Mass is a function of the volume.
+            // Approximate as sphere of 50% aluminum by volume.
+            // Aluminum is 2.7 g/cm^3, which is 2,710kg/m^3
+            var volume_m3 = w_m * h_m * d_m;
+            var mass_kg = 100 / 2.2;
+                                
+            var o = {
+                "pos"  : [startX, startY],
+                "size" : [w_m, h_m],
+                "v"    : [0, 0],
+                "a"    : [0, 0],
+                "mass_kg" : mass_kg,
+                "draw": function(box) {
+                    // console.log("drawing ship");
+                    
+                    var x = box[0];
+                    var y = box[1];
+                    var w = box[2];
+                    var h = box[3];
+
+                    // front
+                    ctx.fillStyle = "rgb(255, 186, 20)";
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.2 * w, y + 0.2 * h);
+                    ctx.lineTo(x + 0.2 * w, y + 1.0 * h);
+                    ctx.lineTo(x + 1.0 * w, y + 1.0 * h);
+                    ctx.lineTo(x + 1.0 * w, y + 0.2 * h);
+                    ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // top
+                    ctx.fillStyle = "rgb(248, 235, 0)";
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
+                    ctx.lineTo(x +       w, y + 0.2 * h);
+                    ctx.lineTo(x + 0.8 * w, y);
+                    ctx.lineTo(x, y);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // left side
+                    ctx.fillStyle = "rgb(255, 210, 5)";
+                    ctx.strokeStyle = "rgb(185, 130, 0)";
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + .2 * w, y + 0.2 * h);
+                    ctx.lineTo(x + .2 * w, y +       h);
+                    ctx.lineTo(x,          y + 0.8 * h);
+                    ctx.lineTo(x, y);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // rope
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.25 * w, y + 0.0 * h);
+                    ctx.lineTo(x + 0.45 * w, y + 0.2 * h);
+                    ctx.lineTo(x + 0.45 * w, y + 1.0 * h);
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.55 * w, y + 0.0 * h);
+                    ctx.lineTo(x + 0.75 * w, y + 0.2 * h);
+                    ctx.lineTo(x + 0.75 * w, y + 1.0 * h);
+                    ctx.stroke();
+                    ctx.closePath();
+                },
+                "updatePhysics" : updatePhysicsSub,
+                "update" : function(delta_ms) {
+                    
+                    // Adjust acceleration based on input forces
+                    var f = [0, 0];
+                    
+                    // Drag can be modeled more accurately than this.
+                    
+                    // Density in atmospheres
+                    var density = 1;
+                    f[0] = f[0] - 0.1 * density * this.v[0] * this.v[0];
+                    f[1] = f[1] - 0.1 * density * this.v[1] * this.v[1];
+                    
+                    // Gravity
+                    //   F = m * a => F = m * g
+                    if (this.mass_kg) {
+                        var g = 9.8;
+                        f[1] = f[1] + g * this.mass_kg;
+                    }
+                                                
+                    this.a[0] = f[0] / this.mass_kg;
+                    this.a[1] = f[1] / this.mass_kg;
+                    
+                    // Move based on acceleration
+                    this.updatePhysics(delta_ms);
+                }
+            };
+            return o;
+        }
+
+        function createShip (width_m) {
+            
             // Mass is a function of the volume.
             // Approximate as sphere of 50% aluminum by volume.
             // Aluminum is 2.7 g/cm^3, which is 2,710kg/m^3
             var volume_m3 = 4 / 3 * Math.PI * (width_m / 2);
             var mass_kg = volume_m3 * 2710;
-
+            
             // Define thrusters based on force required to accelerate at 1g.
             var liftingForce = mass_kg * 9.8;
-
+            
             var ship = {
                 "pos"  : [0, 0],
                 "size" : [width_m, 0.75 * width_m],
@@ -385,7 +495,7 @@
                     var y = box[1];
                     var xCenter = box[0] + box[2] / 2;
                     var yCenter = box[1] + box[3] / 2;
-
+                    
                     // Draw jets last so we can see them
                     if (this.jets[0] > 0) {
                         // to do: make transparency a function of force
@@ -445,7 +555,7 @@
                     ctx.fill();
                     ctx.stroke();
                     ctx.closePath();
-
+                    
                     //body stripe
                     ctx.fillStyle   = this.accentStyle.fillStyle;
                     ctx.strokeStyle = this.accentStyle.strokeStyle;
@@ -468,12 +578,12 @@
                 "updateAI" : function(delta_ms) {
                     var xCenter = this.pos[0] + this.size[0] / 2;
                     var yCenter = this.pos[1] + this.size[1] / 2;
-
+                    
                     // Run autopilot
                     if (this.goal) {
                         var xErr = this.goal[0] - xCenter;
                         var yErr = this.goal[1] - yCenter;
-
+                        
                         // Fire horizontal jets toward goal
                         if (this.v[0] < -this.maxV[0]) {
                             // Emergency shut off
@@ -517,35 +627,35 @@
                     return;
                 },
                 "update" : function(delta_ms) {
-
+                    
                     if (this.autopilot) {
                         this.updateAI(delta_ms);
                     }
                     
                     // Adjust acceleration based on input forces
                     var f = [0, 0];
-
+                    
                     // Drag can be modeled more accurately than this.
                     
                     // Density in atmospheres
                     var density = 1;
                     f[0] = f[0] - 0.1 * density * this.v[0] * this.v[0];
                     f[1] = f[1] - 0.1 * density * this.v[1] * this.v[1];
-
+                    
                     // Gravity
                     //   F = m * a => F = m * g
                     if (this.mass_kg) {
                         var g = 9.8;
                         f[1] = f[1] + g * this.mass_kg;
                     }
-
+                    
                     // Jets
                     for (var i = 0; i < this.jets.length; i++) {
                         var force = this.jets[i] * this.jetMaxForce[i];
                         f[0] = f[0] + Math.cos(this.jetAngles[i]) * force;
                         f[1] = f[1] + Math.sin(this.jetAngles[i]) * force;
                     }
-
+                    
                     this.a[0] = f[0] / this.mass_kg;
                     this.a[1] = f[1] / this.mass_kg;
                     
@@ -588,7 +698,7 @@
                 },
                 handleMouseMove : function(x, y) {
                     this.autopilot = true;
-
+                    
                     // Scale goal extra when in the border region
                     this.goal = [x, y];
                     for (var i = 0; i < 2; i++) {
@@ -649,14 +759,17 @@
                     } else if(e.keyCode == 66) {
                         // pushed b
                         world.drawBoundingBoxes = false;
+                    } else if(e.keyCode == 32) {
+                        // drop a hay bale
+                        world.objects.push(createHayBale(this.pos[0], this.pos[1]));
                     }
                     return;
                 }
-
+                
             };
             return ship;
         }
-
+        
         function createSplashScreen() {
             var o = {
                 hidden : false,
@@ -694,10 +807,10 @@
         document.addEventListener("keyup", keyUpHandler, false);
         document.addEventListener("mousemove", mouseMoveHandler, false);
         document.addEventListener("click", clickHandler, false);
-
+        
         var paused = false;
         var last_now_ms = performance.now();
-
+        
         function startPause () {
             paused = true;
         }
@@ -754,7 +867,7 @@
                 world.draw();
                 
                 last_now_ms = now_ms;
-
+                
                 requestAnimationFrame(draw);
             }
         }
