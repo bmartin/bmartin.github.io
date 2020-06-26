@@ -171,17 +171,29 @@
                 return;
             },
             handleKeyDown : function(e) {
-                for (var i = 0; i < this.objects.length; i++) {
-                    if (this.objects[i].handleKeyDown) {
-                        this.objects[i].handleKeyDown(e);
+                if(e.keyCode == 66) {
+                    // pushed b
+                    world.drawBoundingBoxes = true;
+                } else {
+                    // Pass along to objects
+                    for (var i = 0; i < this.objects.length; i++) {
+                        if (this.objects[i].handleKeyDown) {
+                            this.objects[i].handleKeyDown(e);
+                        }
                     }
                 }
                 return;
             },
             handleKeyUp : function(e) {
-                for (var i = 0; i < this.objects.length; i++) {
-                    if (this.objects[i].handleKeyUp) {
-                        this.objects[i].handleKeyUp(e);
+                if(e.keyCode == 66) {
+                    // pushed b
+                    world.drawBoundingBoxes = false;
+                } else {
+                    // Pass along to objects
+                    for (var i = 0; i < this.objects.length; i++) {
+                        if (this.objects[i].handleKeyUp) {
+                            this.objects[i].handleKeyUp(e);
+                        }
                     }
                 }
                 return;
@@ -723,7 +735,7 @@
                     this.beams.push(this.beamStartSize);
                     return;
                 },
-                handleKeyDown : function(e) {
+                disableAutoPilot : function () {
                     if (this.autopilot) {
                         // Turn off all jets and turn off autopilot
                         for (var i = 0; i < this.jets.length; i++) {
@@ -731,18 +743,20 @@
                         }
                         this.autopilot = false;
                     }
+                },
+                handleKeyDown : function(e) {
                     if (e.keyCode == 39 || e.keyCode == 68) {
                         // pushed right
                         this.jets[0] = 1;
+                        this.disableAutoPilot();
                     } else if(e.keyCode == 37 || e.keyCode == 65) {
                         // pushed left
                         this.jets[2] = 1;
+                        this.disableAutoPilot();
                     } else if(e.keyCode == 38 || e.keyCode == 87) {
                         // pushed up
                         this.jets[1] = 1;
-                    } else if(e.keyCode == 66) {
-                        // pushed b
-                        world.drawBoundingBoxes = true;
+                        this.disableAutoPilot();
                     } else {
                         console.log(e.keyCode);
                     }
@@ -758,20 +772,16 @@
                     } else if(e.keyCode == 38 || e.keyCode == 87) {
                         // pushed up or w
                         this.jets[1] = 0;
-                    } else if(e.keyCode == 66) {
-                        // pushed b
-                        world.drawBoundingBoxes = false;
                     } else if(e.keyCode == 32) {
                         // drop a hay bale
                         world.objects.push(createHayBale(this.pos[0], this.pos[1]));
                     }
                     return;
                 }
-                
             };
             return ship;
         }
-        
+
         function createSplashScreen() {
             var o = {
                 hidden : false,
