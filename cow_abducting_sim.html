@@ -339,10 +339,108 @@
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
             
+            // Update speed (subject to collision)
+            for (var i = 0; i < 2; i++) {
+                this.v[i] = this.v[i] + this.a[i] * delta_s;
+            }
+
             // Move with previous speed
+            var next_pos = [
+                this.pos[0] + this.v[0] * delta_s,
+                this.pos[1] + this.v[1] * delta_s
+            ];
+            
+            // Collision detection
+            var first_collide_obj = null;
+            var first_collide_pos = [...next_pos];
+            var first_collide_v = [...this.v];
+            var first_collide_distance = Math.sqrt(
+                (next_pos[0] - this.pos[0]) * (next_pos[0] - this.pos[0])
+                + (next_pos[1] - this.pos[1]) * (next_pos[1] - this.pos[1]));
+    
+            OTHER:
+            for (var iObj = 0; iObj < world.objects.length; iObj++) {
+                var other = world.objects[iObj];
+                if (other === this) {
+                    continue OTHER;
+                }
+                if (!('bounce_rho' in other)) {
+                    // not a physics object
+                    continue OTHER;
+                }
+                // Need to check for intersection
+                //      --      --
+                //     |  | -> |  |
+                //      --      --
+
+                var collide_pos = [...next_pos];
+                var collide_v = [...this.v];
+                for (var i = 0; i < 2; i++) {
+                    if (this.v[i] > 0) {
+                        if (this.pos[i] > other.pos[i] + other.size[i]) {
+                            // Already past object
+                            //     [other] [this]->
+                            continue OTHER;
+                        } else if (next_pos[i] + this.size[i] < other.pos[i]) {
+                            // Doesn't reach object
+                            //     [this]-> [other]
+                            continue OTHER;
+                        } else {
+                            // Might collide
+                            //     [this]---[-> other]
+                            collide_pos[i] = other.pos[i] - this.size[i];
+                            // ToDo: Add conservation of momentum.
+                            collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                        }
+                    } else if (this.v[i] < 0) {
+                        if (this.pos[i] + this.size[i] < other.pos[i]) {
+                            // Already past object
+                            //     <-[this] [other]
+                            continue OTHER;
+                        } else if (next_pos[i] > other.pos[i] + other.size[i]) {
+                            // Doesn't reach object
+                            //     [other] <-[this]
+                            continue OTHER;
+                        } else {
+                            // Might collide
+                            //     [other<-]--[this]
+                            collide_pos[i] = other.pos[i] + other.size[i];
+                            // ToDo: Add conservation of momentum.
+                            collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                        }
+                    } else {
+                        if (this.pos[i] + this.size[i] < other.pos[i]) {
+                            // Before object
+                            //     [this] [other]
+                            continue OTHER;
+                        } else if (this.pos[i] > other.pos[i] + other.size[i]) {
+                            // After object
+                            //     [other] [this]
+                            continue OTHER;
+                        }
+                    }
+                }
+
+                // If we got here, then they collided. Now see if this was the first collision
+                var collide_distance = Math.sqrt(
+                    (collide_pos[0] - this.pos[0]) * (collide_pos[0] - this.pos[0])
+                    + (collide_pos[1] - this.pos[1]) * (collide_pos[1] - this.pos[1])
+                );
+                if (collide_distance < first_collide_distance) {
+                    // Tentatively mark this as the first collision
+                    first_collide_obj = other;
+                    first_collide_distance = collide_distance;
+                    first_collide_pos = collide_pos;
+                    first_collide_v = collide_v;
+                }
+            }
+
+            this.pos = first_collide_pos;
+            this.v = first_collide_v;
+
+            // Stay in play-field (remove once edges have bounding boxes.)
             for (var i = 0; i < 2; i++) {
                 // Move in current direction
-                this.pos[i] = this.pos[i] + this.v[i] * delta_s;
                 if (this.pos[i] < 0) {
                     this.pos[i] = 0;
                     // Bounce off side wall
@@ -353,12 +451,7 @@
                     this.v[i] = -1 * this.bounce_rho * Math.abs(this.v[i]);
                 }
             }
-            
-            // Update speed
-            for (var i = 0; i < 2; i++) {
-                this.v[i] = this.v[i] + this.a[i] * delta_s;
-            }
-            
+                        
             return;
         };
         
