@@ -247,29 +247,29 @@
                         
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
-                    if (o.draw && !o.hidden) {
-                        if (o.size) {
-                            var visible =
-                                (o.pos[0] + o.size[0] > this.view[0]) &&
-                                (o.pos[1] + o.size[1] > this.view[1]) &&
-                                (o.pos[0] < this.view[0] + this.view[2]) &&
-                                (o.pos[1] < this.view[1] + this.view[3]);
-                            if (visible) {
-                                var zoom = this.zoom;
-                                var box = [zoom * (o.pos[0] - this.view[0]),
-                                        zoom * (o.pos[1] - this.view[1]),
-                                        zoom * o.size[0],
-                                        zoom * o.size[1]];
+                    if ('size' in o) {
+                        var visible =
+                            (o.pos[0] + o.size[0] > this.view[0]) &&
+                            (o.pos[1] + o.size[1] > this.view[1]) &&
+                            (o.pos[0] < this.view[0] + this.view[2]) &&
+                            (o.pos[1] < this.view[1] + this.view[3]);
+                        if (visible) {
+                            var zoom = this.zoom;
+                            var box = [zoom * (o.pos[0] - this.view[0]),
+                                       zoom * (o.pos[1] - this.view[1]),
+                                       zoom * o.size[0],
+                                       zoom * o.size[1]];
+                            if (o.draw && !o.hidden) {
                                 o.draw(box);
-                                if (this.drawBoundingBoxes && o.pos && o.size) {
-                                    ctx.strokeStyle = "green";
-                                    ctx.strokeRect(box[0], box[1], box[2], box[3]);
-                                }
                             }
-                        } else {
-                            // dimensionless object to draw
-                            o.draw([0, 0, canvas.width, canvas.height]);
+                            if (this.drawBoundingBoxes && 'pos' in o && 'size' in o) {
+                                ctx.strokeStyle = "green";
+                                ctx.strokeRect(box[0], box[1], box[2], box[3]);
+                            }
                         }
+                    } else if ("draw" in o && !o.hidden) {
+                        // dimensionless object to draw
+                        o.draw([0, 0, canvas.width, canvas.height]);
                     }
                 }
                 
