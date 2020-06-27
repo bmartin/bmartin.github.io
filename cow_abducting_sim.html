@@ -590,8 +590,9 @@
                 "jetMaxForce" : [1 * liftingForce, 3 * liftingForce, 1 * liftingForce],
                 "jetAngles" : [0, 1.5 * Math.PI, Math.PI],
                 "beams" : [],
-                "beamStartSize" : 50,
-                "beamLength" : 200,
+                // Measured in multiples of the ship height size
+                "beamStartWidth" : 1,
+                "beamHeight" : 5,
                 "bodyStyle" : { "fillStyle" : "#eee", "strokeStyle" : "#444"},
                 "accentStyle" : { "fillStyle" : "#e00", "strokeStyle" : "#000000ff"},
                 "cockpitStyle" : { "fillStyle" : "rgb(95, 199, 199, 100)", "strokeStyle" : "rgb(40, 100, 100)"},
@@ -642,14 +643,17 @@
                     }
                     
                     // Draw beams behind body
+                    var beamStartPos = [box[0] + box[2]/2, box[1] + box[3]];
+                    var beamHeight = box[3] * this.beamHeight;
                     for (var i = 0; i < this.beams.length; i++) {
+                        var beamWidth = this.beams[i] * box[2] / 2;
                         // transparent green beam
                         ctx.fillStyle = "#00ff0080";
                         ctx.beginPath();
-                        ctx.moveTo(xCenter, yCenter);
-                        ctx.lineTo(xCenter - this.beams[i], yCenter + this.beamLength),
-                        ctx.lineTo(xCenter + this.beams[i], yCenter + this.beamLength);
-                        ctx.lineTo(xCenter, yCenter);
+                        ctx.moveTo(beamStartPos[0],             beamStartPos[1]);
+                        ctx.lineTo(beamStartPos[0] - beamWidth, beamStartPos[1] + beamHeight);
+                        ctx.lineTo(beamStartPos[0] + beamWidth, beamStartPos[1] + beamHeight);
+                        ctx.lineTo(beamStartPos[0],             beamStartPos[1]);
                         ctx.fill();
                         ctx.closePath();
                     }
@@ -763,15 +767,10 @@
                         f[1] = f[1] + Math.sin(this.jetAngles[i]) * force;
                     }
                     
-                    this.a[0] = f[0] / this.mass_kg;
-                    this.a[1] = f[1] / this.mass_kg;
-                    
-                    // Move based on acceleration
-                    this.updatePhysics(delta_ms);
-                    
                     // Update tractor beams
                     for (var i = 0; i < this.beams.length; i++) {
-                        this.beams[i] = this.beams[i] - 1;
+                        // Beams disappear over 1 second
+                        this.beams[i] = this.beams[i] - this.beamStartWidth / 1000 * delta_ms;
                     }
                     // Delete empty beams
                     var beamNum = 0;
@@ -783,25 +782,45 @@
                         }
                     }
                     
-                    // Try to pick up cows
+                    // Try to pick up objects
+                    var beamStartPos = [this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]];
+                    var beamHeight = this.size[1] * this.beamHeight;
                     for (var i = 0; i < world.objects.length; i++) {
+                        var other = world.objects[i];
+                        if (this === other) {
+                            continue;
+                        }
+                        if (!('mass_kg' in other)) {
+                            continue;
+                        }
+                        if (!('v' in other)) {
+                            continue;
+                        }
                         // Check if mob is in beam
-                        if (world.objects[i].v) {
-                            var mob = world.objects[i];
-                            if (mob.pos[1] > this.pos[1] && mob.pos[1] < this.pos[1] + this.beamLength) {
-                                // Could be in beam
-                                for (var j = 0; j < this.beams.length; j++) {
-                                    var beamWidth = this.beams[j];
-                                    if (mob.pos[0] > this.pos[0] - beamWidth &&
-                                    mob.pos[0] < this.pos[0] + beamWidth
-                                    ) {
-                                        // In beam
-                                        mob.v[1] = mob.v[1] - 1;
-                                    }
-                                }
+                        if (other.pos[1] + other.size[1] < beamStartPos[1]) {
+                            // other is above this ship
+                            continue;
+                        } else if (other.pos[1] > beamStartPos[1] + beamHeight) {
+                            // Other is below beam
+                            continue;
+                        }
+                        // Could be in  one of the beams
+                        for (var j = 0; j < this.beams.length; j++) {
+                            var beamWidth = this.beams[j] * this.size[1];
+                            if (other.pos[0] > beamStartPos[0] - beamWidth && other.pos[0] < beamStartPos[0] + beamWidth) {
+                                // In beam
+                                other.v[1] = other.v[1] - 1;
                             }
                         }
-                    }                
+                    }
+
+                    // Move based on acceleration
+                    this.a[0] = f[0] / this.mass_kg;
+                    this.a[1] = f[1] / this.mass_kg;
+                    
+                    this.updatePhysics(delta_ms);
+                    
+                    return;
                 },
                 handleMouseMove : function(x, y) {
                     this.autopilot = true;
@@ -825,7 +844,7 @@
                     return;
                 },
                 handleClick : function(x, y) {
-                    this.beams.push(this.beamStartSize);
+                    this.beams.push(this.beamStartWidth);
                     return;
                 },
                 disableAutoPilot : function () {
