@@ -143,6 +143,8 @@
             // Initial value is width of screen.
             "zoom" : canvas.width / w,
             "view" : [0, 0, w, h],
+            // in m/s
+            "g" : 9.8,
             "focus" : null,
             "drawBoundingBoxes" : false,
             handleMouseMove : function(relativeX, relativeY) {
@@ -551,8 +553,7 @@
                     // Gravity
                     //   F = m * a => F = m * g
                     if (this.mass_kg) {
-                        var g = 9.8;
-                        f[1] = f[1] + g * this.mass_kg;
+                        f[1] = f[1] + world.g * this.mass_kg;
                     }
                                                 
                     this.a[0] = f[0] / this.mass_kg;
@@ -756,8 +757,7 @@
                     // Gravity
                     //   F = m * a => F = m * g
                     if (this.mass_kg) {
-                        var g = 9.8;
-                        f[1] = f[1] + g * this.mass_kg;
+                        f[1] = f[1] + world.g * this.mass_kg;
                     }
                     
                     // Jets
