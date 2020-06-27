@@ -154,6 +154,7 @@
         var world = {
             "size" : [w, h],
             "objects" : [],
+
             // pixels / m
             // Initial value is width of screen.
             "zoom" : canvas.width / w,
@@ -983,7 +984,10 @@
         }
         
         function keyDownHandler(e) {
-            e.preventDefault();
+            // Suppress default for space and arrow keys
+            if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+                e.preventDefault();
+            }
 
             if (e.keyCode == 27) {
                 startPause();
