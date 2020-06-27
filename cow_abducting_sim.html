@@ -436,7 +436,8 @@
             var first_collide_obj = null;
             var first_collide_pos = [...next_pos];
             var first_collide_v = [...this.v];
-            var first_collide_distance = Math.sqrt(
+            var first_collide_distance = null;
+            var no_collide_distance = Math.sqrt(
                 (next_pos[0] - this.pos[0]) * (next_pos[0] - this.pos[0])
                 + (next_pos[1] - this.pos[1]) * (next_pos[1] - this.pos[1]));
     
@@ -468,11 +469,17 @@
                             //     [this]-> [other]
                             continue OTHER;
                         } else {
-                            // Might collide
-                            //     [this]---[-> other]
-                            collide_pos[i] = other.pos[i] - this.size[i] - Number.EPSILON;
-                            // ToDo: Add conservation of momentum.
-                            collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                            // Might collide, or might already be inside
+                            if (this.pos[i] + this.size[i] < other.pos[i] + 0.02) {
+                                // True collision
+                                //     [this]---[-> other]
+
+                                // ToDo: Add conservation of momentum.
+                                collide_pos[i] = other.pos[i] - this.size[i] - Number.EPSILON;
+                                collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                            } else {
+                                // This dimension already satisfied, bot other might collide
+                            }
                         }
                     } else if (this.v[i] < 0) {
                         if (this.pos[i] + this.size[i] < other.pos[i]) {
@@ -484,13 +491,16 @@
                             //     [other] <-[this]
                             continue OTHER;
                         } else {
-                            // Might collide
-                            //     [other<-]--[this]
-                            collide_pos[i] = other.pos[i] + other.size[i] + Number.EPSILON;
-                            // ToDo: Add conservation of momentum.
-                            collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                            // Might collide, or might already be inside
+                            if (this.pos[i] > other.pos[i] + other.size[i] - 0.02) {
+                                // True collision
+                                collide_pos[i] = other.pos[i] + other.size[i] + Number.EPSILON;
+                                // ToDo: Add conservation of momentum.
+                                collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
+                            }
                         }
                     } else {
+                        // Effectively not moving in this dimension,
                         if (this.pos[i] + this.size[i] < other.pos[i]) {
                             // Before object
                             //     [this] [other]
@@ -499,6 +509,8 @@
                             // After object
                             //     [other] [this]
                             continue OTHER;
+                        } else {
+                            // Might collide
                         }
                     }
                 }
@@ -508,17 +520,21 @@
                     (collide_pos[0] - this.pos[0]) * (collide_pos[0] - this.pos[0])
                     + (collide_pos[1] - this.pos[1]) * (collide_pos[1] - this.pos[1])
                 );
-                if (collide_distance < first_collide_distance) {
+                if (first_collide_distance === null || collide_distance < first_collide_distance) {
                     // Tentatively mark this as the first collision
-                    first_collide_obj = other;
                     first_collide_distance = collide_distance;
+                    first_collide_obj = other;
                     first_collide_pos = collide_pos;
                     first_collide_v = collide_v;
                 }
             }
 
-            this.pos = first_collide_pos;
-            this.v = first_collide_v;
+            if (first_collide_obj !== null) {
+                this.pos = first_collide_pos;
+                this.v = first_collide_v;
+            } else {
+                this.pos = next_pos;
+            }
 
             // Stay in play-field (remove once edges have bounding boxes.)
             for (var i = 0; i < 2; i++) {
