@@ -279,7 +279,7 @@
             },
             "update" : function(delta_ms) {
                 for (var i = 0; i < this.objects.length; i++) {
-                    if (this.objects[i].update) {
+                    if ('update' in this.objects[i]) {
                         this.objects[i].update(delta_ms);
                     }
                 }
@@ -555,7 +555,7 @@
                     if (this.mass_kg) {
                         f[1] = f[1] + world.g * this.mass_kg;
                     }
-                                                
+            
                     this.a[0] = f[0] / this.mass_kg;
                     this.a[1] = f[1] / this.mass_kg;
                     
@@ -838,7 +838,7 @@
                             this.goal[i] = world.size[i];
                         }
                         if (this.goal[i] > world.size[i]) {
-                            this.goal[i] = works.size[i];;
+                            this.goal[i] = works.size[i];
                         }
                     }
                     return;
@@ -914,7 +914,7 @@
                         return;
                     }
                     this.hidden = true;
-                    // Initial ship is 100m
+                    // Initial ship is 5m
                     var ship = createShip(5);
                     world.objects.push(ship);
                     world.focus = ship;
