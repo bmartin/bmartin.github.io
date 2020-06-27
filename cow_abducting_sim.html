@@ -565,11 +565,11 @@
                     var f = [0, 0];
                     
                     // Drag can be modeled more accurately than this.
-                    
+
                     // Density in atmospheres
                     var density = 1;
-                    f[0] = f[0] - 0.1 * density * this.v[0] * this.v[0];
-                    f[1] = f[1] - 0.1 * density * this.v[1] * this.v[1];
+                    f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
+                    f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
                     
                     // Gravity
                     //   F = m * a => F = m * g
@@ -772,8 +772,8 @@
                     
                     // Density in atmospheres
                     var density = 1;
-                    f[0] = f[0] - 0.1 * density * this.v[0] * this.v[0];
-                    f[1] = f[1] - 0.1 * density * this.v[1] * this.v[1];
+                    f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
+                    f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
                     
                     // Gravity
                     //   F = m * a => F = m * g
