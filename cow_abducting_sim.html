@@ -831,6 +831,8 @@
                             if (other.pos[0] > beamStartPos[0] - beamWidth && other.pos[0] < beamStartPos[0] + beamWidth) {
                                 // In beam
                                 other.v[1] = other.v[1] - 1;
+                                // Pull down by weight of object picked up
+                                f[1] = f[1] + other.mass_kg * world.g;
                             }
                         }
                     }
