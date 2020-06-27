@@ -996,12 +996,36 @@
         pauseButton.hidden = true;
         world.uiObjects.push(pauseButton);
 
+        var pauseScreen = createUIObject(0, 0, canvas.width, canvas.height);
+        pauseScreen.draw = function (x, y) {
+            ctx.fillStyle = "#0009";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "#FFF";
+            ctx.textAlign = "center";
+            ctx.fillText("Paused", canvas.width/2, canvas.height/2);
+            ctx.strokeStyle = "#AFA";
+            ctx.textAlign = "center";
+            ctx.strokeText("Paused", canvas.width/2, canvas.height/2);
+        };
+
+        pauseScreen.handleClick = function (x, y) {
+            endPause();
+            this.hidden = true;
+        };
+        pauseScreen.hidden = true;
+        world.uiObjects.push(pauseScreen);
+
         var splashScreen = createUIObject(0, 0, canvas.width, canvas.height);
         splashScreen.draw = function(view) {
+            ctx.fillStyle = "#0009";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.font = "30px Arial";
             ctx.fillStyle = "#fff";
+            ctx.strokeStyle = "#AFA";
             ctx.textAlign = "center";
             ctx.fillText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
+            ctx.strokeText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
             
             ctx.font = "16px Arial";
             ctx.fillStyle = "#fff";
@@ -1023,12 +1047,12 @@
 
         function startPause () {
             paused = true;
+            pauseScreen.hidden = false;
         }
         function endPause () {
             paused = false;
-            pauseButton.hidden = false;
+            pauseScreen.hidden = true;
             last_now_ms = performance.now();
-            draw(performance.now());
         }
         
         function keyDownHandler(e) {
@@ -1037,17 +1061,22 @@
                 e.preventDefault();
             }
 
-            if (e.keyCode == 27) {
-                startPause();
-            } else {
-                if (paused) {
-                    endPause();
-                }
+            if (!paused) {
                 world.handleKeyDown(e);
             }
         }
         function keyUpHandler(e) {
-            world.handleKeyUp(e);
+            if (e.keyCode == 27) {
+                if (paused) {
+                    endPause();
+                } else {
+                    startPause();
+                }
+            } else {
+                if (!paused) {
+                    world.handleKeyUp(e);
+                }
+            }
         }
         function mouseMoveHandler(e) {
             var relativeX = e.clientX - canvas.offsetLeft;
@@ -1058,34 +1087,30 @@
         function clickHandler(e) {
             if (paused) {
                 endPause();
+            } else {
+                var relativeX = e.clientX - canvas.offsetLeft;
+                var relativeY = e.clientY - canvas.offsetTop;
+                
+                world.handleClick(relativeX, relativeY);
             }
-            var relativeX = e.clientX - canvas.offsetLeft;
-            var relativeY = e.clientY - canvas.offsetTop;
-            
-            world.handleClick(relativeX, relativeY);
         }
         
         function draw(now_ms) {
-            if (now_ms - last_now_ms > 1000) {
-                // At lease a second passed. Probably tab was in background.
-                startPause();
+            if (!paused) {
+                if (now_ms - last_now_ms > 1000) {
+                    // At lease a second passed. Probably tab was in background.
+                    startPause();
+                } else {
+                    world.update(now_ms - last_now_ms);
+                    last_now_ms = now_ms;
+                }
             }
-            if (paused) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.font = "30px Arial";
-                ctx.fillStyle = "#000";
-                ctx.textAlign = "center";
-                ctx.fillText("Paused", canvas.width/2, canvas.height/2);
-            } else {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw even if paused
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            world.draw();    
                 
-                world.update(now_ms - last_now_ms);
-                world.draw();
-                
-                last_now_ms = now_ms;
-                
-                requestAnimationFrame(draw);
-            }
+            requestAnimationFrame(draw);
         }
         
         draw(performance.now());
