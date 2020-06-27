@@ -411,7 +411,7 @@
                         } else {
                             // Might collide
                             //     [this]---[-> other]
-                            collide_pos[i] = other.pos[i] - this.size[i];
+                            collide_pos[i] = other.pos[i] - this.size[i] - Number.EPSILON;
                             // ToDo: Add conservation of momentum.
                             collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
                         }
@@ -427,7 +427,7 @@
                         } else {
                             // Might collide
                             //     [other<-]--[this]
-                            collide_pos[i] = other.pos[i] + other.size[i];
+                            collide_pos[i] = other.pos[i] + other.size[i] + Number.EPSILON;
                             // ToDo: Add conservation of momentum.
                             collide_v[i] = -1 * this.bounce_rho * other.bounce_rho * this.v[i];
                         }
@@ -474,7 +474,7 @@
                     this.v[i] = -1 * this.bounce_rho * Math.abs(this.v[i]);
                 }
             }
-                        
+
             return;
         };
         
