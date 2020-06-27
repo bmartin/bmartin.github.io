@@ -886,7 +886,7 @@
                         this.jets[1] = 0;
                     } else if(e.keyCode == 32) {
                         // drop a hay bale
-                        world.objects.push(createHayBale(this.pos[0], this.pos[1]));
+                        world.objects.push(createHayBale(this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]));
                     }
                     return;
                 }
