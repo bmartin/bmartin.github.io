@@ -162,19 +162,27 @@
                 inBox : inBox
             };
         }
-        function createUIButton (x, y, w, h, text) {
+        function createUIButton (x, y, w, h) {
             var o = createUIObject(x, y, w, h);
-            o.text = text;
             o.draw = function () {
                 ctx.fillStyle = "#000a";
                 ctx.fillRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
                 ctx.strokeStyle = "#dfd";
                 ctx.strokeRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
+                this.drawIcon([ this.pos[0] + 5, this.pos[1] + 5, this.size[0] - 10, this.size[1] - 10]);
+            };
+            return o;
+        }
+
+        function createUITextButton (x, y, w, h, text) {
+            var o = createUIButton(x, y, w, h);
+            o.text = text;
+            o.drawIcon = function (box) {
                 ctx.font = "20px Arial";
                 ctx.fillStyle = "#dfd";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText(o.text, this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1] / 2, this.size[0]);
+                ctx.fillText(o.text, box[0] + box[2] / 2, box[1] + box[3] / 2, box[3]);
             };
             return o;
         }
@@ -528,6 +536,67 @@
 
             return;
         };
+
+        function drawHayBale (box) {
+            var x = box[0];
+            var y = box[1];
+            var w = box[2];
+            var h = box[3];
+
+            // front
+            ctx.fillStyle = "rgb(255, 186, 20)";
+            ctx.beginPath();
+            ctx.moveTo(x + 0.2 * w, y + 0.2 * h);
+            ctx.lineTo(x + 0.2 * w, y + 1.0 * h);
+            ctx.lineTo(x + 1.0 * w, y + 1.0 * h);
+            ctx.lineTo(x + 1.0 * w, y + 0.2 * h);
+            ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+
+            // top
+            ctx.fillStyle = "rgb(248, 235, 0)";
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
+            ctx.lineTo(x +       w, y + 0.2 * h);
+            ctx.lineTo(x + 0.8 * w, y);
+            ctx.lineTo(x, y);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+
+            // left side
+            ctx.fillStyle = "rgb(255, 210, 5)";
+            ctx.strokeStyle = "rgb(185, 130, 0)";
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + .2 * w, y + 0.2 * h);
+            ctx.lineTo(x + .2 * w, y +       h);
+            ctx.lineTo(x,          y + 0.8 * h);
+            ctx.lineTo(x, y);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+
+            // rope
+            ctx.beginPath();
+            ctx.moveTo(x + 0.25 * w, y + 0.0 * h);
+            ctx.lineTo(x + 0.45 * w, y + 0.2 * h);
+            ctx.lineTo(x + 0.45 * w, y + 1.0 * h);
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.moveTo(x + 0.55 * w, y + 0.0 * h);
+            ctx.lineTo(x + 0.75 * w, y + 0.2 * h);
+            ctx.lineTo(x + 0.75 * w, y + 1.0 * h);
+            ctx.stroke();
+            ctx.closePath();
+            return;
+        }
+
         
         function createHayBale (startX, startY) {
             
@@ -549,66 +618,7 @@
                 "a"    : [0, 0],
                 "mass_kg" : mass_kg,
                 "bounce_rho" : 0.1,
-                "draw": function(box) {
-                    // console.log("drawing ship");
-                    
-                    var x = box[0];
-                    var y = box[1];
-                    var w = box[2];
-                    var h = box[3];
-
-                    // front
-                    ctx.fillStyle = "rgb(255, 186, 20)";
-                    ctx.beginPath();
-                    ctx.moveTo(x + 0.2 * w, y + 0.2 * h);
-                    ctx.lineTo(x + 0.2 * w, y + 1.0 * h);
-                    ctx.lineTo(x + 1.0 * w, y + 1.0 * h);
-                    ctx.lineTo(x + 1.0 * w, y + 0.2 * h);
-                    ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.closePath();
-
-                    // top
-                    ctx.fillStyle = "rgb(248, 235, 0)";
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + 0.2 * w, y + 0.2 * h);
-                    ctx.lineTo(x +       w, y + 0.2 * h);
-                    ctx.lineTo(x + 0.8 * w, y);
-                    ctx.lineTo(x, y);
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.closePath();
-
-                    // left side
-                    ctx.fillStyle = "rgb(255, 210, 5)";
-                    ctx.strokeStyle = "rgb(185, 130, 0)";
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + .2 * w, y + 0.2 * h);
-                    ctx.lineTo(x + .2 * w, y +       h);
-                    ctx.lineTo(x,          y + 0.8 * h);
-                    ctx.lineTo(x, y);
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.closePath();
-
-                    // rope
-                    ctx.beginPath();
-                    ctx.moveTo(x + 0.25 * w, y + 0.0 * h);
-                    ctx.lineTo(x + 0.45 * w, y + 0.2 * h);
-                    ctx.lineTo(x + 0.45 * w, y + 1.0 * h);
-                    ctx.stroke();
-                    ctx.closePath();
-
-                    ctx.beginPath();
-                    ctx.moveTo(x + 0.55 * w, y + 0.0 * h);
-                    ctx.lineTo(x + 0.75 * w, y + 0.2 * h);
-                    ctx.lineTo(x + 0.75 * w, y + 1.0 * h);
-                    ctx.stroke();
-                    ctx.closePath();
-                },
+                "draw": drawHayBale,
                 "updatePhysics" : updatePhysicsSub,
                 "update" : function(delta_ms) {
                     
@@ -903,6 +913,10 @@
                     this.beams.push(this.beamStartWidth);
                     return;
                 },
+                addHayBale : function () {
+                    world.objects.push(createHayBale(this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]));
+                    return;
+                },
                 handleClick : function(x, y) {
                     if (   x > this.pos[0] && x < this.pos[0] + this.size[0]
                         && y > this.pos[1] && y < this.pos[1] + this.size[1]) {
@@ -970,7 +984,7 @@
                         this.jets[1] = 0;
                     } else if(e.keyCode == 32) {
                         // drop a hay bale
-                        world.objects.push(createHayBale(this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]));
+                        this.addHayBale();
                     } else if(e.keyCode == 83 || e.keyCode == 40) {
                         this.addBeam();
                     }
@@ -979,7 +993,21 @@
             };
             return ship;
         }
-        
+
+        var gameHudButtons = [];
+
+        var hayBaleButton = createUIButton (canvas.width / 2, canvas.height - 40, 30, 30);
+        hayBaleButton.ship = null;
+        hayBaleButton.handleClick = function (x, y) {
+            if (world.focus != null) {
+                world.focus.addHayBale();
+            }
+        };
+        hayBaleButton.drawIcon = drawHayBale;
+        hayBaleButton.hidden = true;
+        gameHudButtons.push(hayBaleButton);
+        world.uiObjects.push(hayBaleButton);
+
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
         document.addEventListener("mousemove", mouseMoveHandler, false);
@@ -988,13 +1016,13 @@
         var paused = false;
         var last_now_ms = performance.now();
         
-        var pauseButton = createUIButton (canvas.width - 40, 10, 30, 30, '⏸');
+        var pauseButton = createUITextButton (canvas.width - 40, 10, 30, 30, '⏸');
         pauseButton.handleClick = function (x, y) {
             startPause();
-            this.hidden = true;
         };
         pauseButton.hidden = true;
         world.uiObjects.push(pauseButton);
+        gameHudButtons.push(pauseButton);
 
         var pauseScreen = createUIObject(0, 0, canvas.width, canvas.height);
         pauseScreen.draw = function (x, y) {
@@ -1040,7 +1068,10 @@
             var ship = createShip(5);
             world.objects.push(ship);
             world.focus = ship;
-            pauseButton.hidden = false;
+            for (var i = 0; i < gameHudButtons.length; i++) {
+                gameHudButtons[i].hidden = false;
+            }
+
             return;
         };
         world.uiObjects.push(splashScreen);
