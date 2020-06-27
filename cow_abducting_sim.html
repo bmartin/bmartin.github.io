@@ -133,7 +133,19 @@
         var rightPressed = false;
         var leftPressed  = false;
         var upPressed    = false;
-        
+
+        function createInvisibleBoundingBox (pos, size, bounce_rho) {
+            // No mass is the same as infinite                                
+            var o = {
+                "pos"  : pos,
+                "size" : size,
+                "v"    : [0, 0],
+                "a"    : [0, 0],
+                "bounce_rho" : bounce_rho
+            };
+            return o;
+        }
+
         var w = 200;
         var h = 100;
         var world = {
@@ -286,6 +298,12 @@
                 return;
             }
         };
+
+        // Add bounding box around world to keep physics objects in.
+        world.objects.push(createInvisibleBoundingBox([-1,            -1], [world.size[0] + 2, 2], 1));
+        world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0] + 2, 2], 1));
+        world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
+        world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
        
         function createStarField(x, y, w, h, numStars) {
             var starField = {
@@ -337,7 +355,10 @@
         }
         // Bottom 10% of world is ground
         world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
-        
+
+        // Bottom 5% is collision box for ground. Ground is moderately bouncy
+        world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 1], .75));
+
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
             
