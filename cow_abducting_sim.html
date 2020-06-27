@@ -664,7 +664,7 @@
             return o;
         }
 
-        function createShip (width_m) {
+        function createShip (width_m, startPos) {
             
             // Mass is a function of the volume.
             // Approximate as sphere of 50% aluminum by volume.
@@ -676,7 +676,7 @@
             var liftingForce = mass_kg * 9.8;
             
             var ship = {
-                "pos"  : [0, 0],
+                "pos"  : startPos,
                 "size" : [width_m, 0.75 * width_m],
                 "v"    : [0, 0],
                 "a"    : [0, 0],
@@ -684,7 +684,7 @@
                 "bounce_rho" : 0.9,
                 "maxV" : [50, 50],
                 "autopilot" : true,
-                "goal" : [0, 0],
+                "goal" : startPos,
                 "jets" : [0, 0, 0],
                 "jetMaxForce" : [1 * liftingForce, 3 * liftingForce, 1 * liftingForce],
                 "jetAngles" : [0, 1.5 * Math.PI, Math.PI],
@@ -1080,8 +1080,8 @@
         splashScreen.handleClick = function(x, y) {
             this.hidden = true;
             
-            // Initial ship is 5m
-            var ship = createShip(5);
+            // Initial ship is 5m in center of world
+            var ship = createShip(5, [world.size[0] / 2, world.size[1] / 2]);
             world.objects.push(ship);
             world.focus = ship;
             for (var i = 0; i < gameHudButtons.length; i++) {
