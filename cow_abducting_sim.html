@@ -149,12 +149,42 @@
             return o;
         }
 
+        function inBox (x, y) {
+            return (   x > this.pos[0] && x < this.pos[0] + this.size[0]
+                    && y > this.pos[1] && y < this.pos[1] + this.size[1]);                  ;
+        }
+
+        function createUIObject (x, y, w, h) {
+            return {
+                pos : [x, y],
+                size : [w, h],
+                hidden : false,
+                inBox : inBox
+            };
+        }
+        function createUIButton (x, y, w, h, text) {
+            var o = createUIObject(x, y, w, h);
+            o.text = text;
+            o.draw = function () {
+                ctx.fillStyle = "#000a";
+                ctx.fillRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
+                ctx.strokeStyle = "#dfd";
+                ctx.strokeRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
+                ctx.font = "20px Arial";
+                ctx.fillStyle = "#dfd";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(o.text, this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1] / 2, this.size[0]);
+            };
+            return o;
+        }
+
         var w = 200;
         var h = 100;
         var world = {
             "size" : [w, h],
             "objects" : [],
-
+            "uiObjects" : [],
             // pixels / m
             // Initial value is width of screen.
             "zoom" : canvas.width / w,
@@ -177,11 +207,21 @@
                 return;
             },
             handleClick : function(relativeX, relativeY) {
+                // First see if we clicked on a ui element
+                for (var i = 0; i < this.uiObjects.length; i++) {
+                    if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
+                        if (this.uiObjects[i].inBox(relativeX, relativeY)) {
+                            this.uiObjects[i].handleClick(relativeX, relativeY);
+                            return;
+                        }
+                    }
+                }
+
+                // Now check game objects
                 var x = relativeX / this.zoom + this.view[0];
                 var y = relativeY / this.zoom + this.view[1];
-                
                 for (var i = 0; i < this.objects.length; i++) {
-                    if (this.objects[i].handleClick) {
+                    if ("handleClick" in this.objects[i]) {
                         this.objects[i].handleClick(x, y);
                     }
                 }
@@ -288,6 +328,13 @@
                     } else if ("draw" in o && !o.hidden) {
                         // dimensionless object to draw
                         o.draw([0, 0, canvas.width, canvas.height]);
+                    }
+                }
+                
+                // Draw UI elements over the rest of the screen
+                for (var i = 0; i < this.uiObjects.length; i++) {
+                    if (!this.uiObjects[i].hidden) {
+                        this.uiObjects[i].draw();
                     }
                 }
                 
@@ -932,39 +979,6 @@
             };
             return ship;
         }
-
-        function createSplashScreen() {
-            var o = {
-                hidden : false,
-                draw: function(view) {
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "#fff";
-                    ctx.textAlign = "center";
-                    ctx.fillText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
-                    
-                    ctx.font = "16px Arial";
-                    ctx.fillStyle = "#fff";
-                    ctx.textAlign = "center";
-                    ctx.fillText("Click to Start", canvas.width/2, canvas.height * .75);
-                    return;
-                },
-                handleClick : function(x, y) {
-                    if (this.hidden) {
-                        return;
-                    }
-                    this.hidden = true;
-                    // Initial ship is 5m
-                    var ship = createShip(5);
-                    world.objects.push(ship);
-                    world.focus = ship;
-                    return;
-                }
-            };
-            return o;
-        }
-        
-        // Must be last object on stack
-        world.objects.push(createSplashScreen());
         
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
@@ -974,11 +988,45 @@
         var paused = false;
         var last_now_ms = performance.now();
         
+        var pauseButton = createUIButton (canvas.width - 40, 10, 30, 30, '⏸');
+        pauseButton.handleClick = function (x, y) {
+            startPause();
+            this.hidden = true;
+        };
+        pauseButton.hidden = true;
+        world.uiObjects.push(pauseButton);
+
+        var splashScreen = createUIObject(0, 0, canvas.width, canvas.height);
+        splashScreen.draw = function(view) {
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.fillText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
+            
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.fillText("Click to Start", canvas.width/2, canvas.height * .75);
+            return;
+        };
+        splashScreen.handleClick = function(x, y) {
+            this.hidden = true;
+            
+            // Initial ship is 5m
+            var ship = createShip(5);
+            world.objects.push(ship);
+            world.focus = ship;
+            pauseButton.hidden = false;
+            return;
+        };
+        world.uiObjects.push(splashScreen);
+
         function startPause () {
             paused = true;
         }
         function endPause () {
             paused = false;
+            pauseButton.hidden = false;
             last_now_ms = performance.now();
             draw(performance.now());
         }
