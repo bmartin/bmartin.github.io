@@ -470,7 +470,7 @@
                             continue OTHER;
                         } else {
                             // Might collide, or might already be inside
-                            if (this.pos[i] + this.size[i] < other.pos[i] + 0.02) {
+                            if (this.pos[i] + this.size[i] < other.pos[i] + 0.25 * other.size[i]) {
                                 // True collision
                                 //     [this]---[-> other]
 
@@ -492,7 +492,7 @@
                             continue OTHER;
                         } else {
                             // Might collide, or might already be inside
-                            if (this.pos[i] > other.pos[i] + other.size[i] - 0.02) {
+                            if (this.pos[i] > other.pos[i] + other.size[i] - 0.25 * other.size[i]) {
                                 // True collision
                                 collide_pos[i] = other.pos[i] + other.size[i] + Number.EPSILON;
                                 // ToDo: Add conservation of momentum.
