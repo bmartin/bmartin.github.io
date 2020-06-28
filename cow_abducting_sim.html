@@ -425,7 +425,7 @@
         world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
 
         // Bottom 5% is collision box for ground. Ground is moderately bouncy
-        world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 1], .75));
+        world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
 
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
