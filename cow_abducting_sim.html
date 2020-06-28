@@ -1077,17 +1077,19 @@
                     this.beams.push(this.beamStartWidth);
                     return;
                 },
-                addHayBale : function () {
-                    var bale = createHayBale([this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1] + 0.5]);
-                    bale.v = [...this.v];
-                    world.objects.push(bale);
+                dropItem : function (item) {
+                    // Item starts inside ship. This avoids possible bounding box problem
+                    item.pos = [this.pos[0] + this.size[0] / 2 - item.size[0] / 2,
+                                this.pos[1] + this.size[1] - item.size[1]];
+                    item.v = [...this.v];
+                    world.objects.push(item);
                     return;
                 },
+                addHayBale : function () {
+                    return this.dropItem(createHayBale([0, 0]));
+                },
                 addCow : function () {
-                    var cow = createCow([this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1] + 0.5], 0);
-                    cow.v = [...this.v];
-                    world.objects.push(cow);
-                    return;
+                    return this.dropItem(createCow([0, 0], 0));
                 },
                 handleClick : function(x, y) {
                     if (   x > this.pos[0] && x < this.pos[0] + this.size[0]
