@@ -709,18 +709,17 @@
 
         function createCow (startPos, startAge_months) {
             var o = createPhysicsObject(startPos, [1, 1], 1, 0.1);
+
             o.draw = function (box) {
                 var x = box[0];
                 var y = box[1];
                 var w = box[2];
                 var h = box[3];
                 
-                var bodyColor;
                 if (this.alive) {
-                    bodyColor = "#FFF";
+                    // Nomal
                 } else {
                     // Gray-green body upside down
-                    bodyColor = "#353";
                     y = y + h;
                     h = -h;
                 }
@@ -732,8 +731,8 @@
                 }
 
                 // body
-                ctx.strokeStyle = "rgb(0, 0, 0)";
-                ctx.fillStyle = bodyColor;
+                ctx.strokeStyle = "#000";
+                ctx.fillStyle = this.bodyMainColor;
                 ctx.beginPath();
                 // Main body
                 ctx.rect(x + 0.0 * w, y + 0.2 * h, 0.8 * w, 0.5 * h);
@@ -749,7 +748,7 @@
 
                 // Patches
                 ctx.beginPath();
-                ctx.fillStyle = "rgb(0, 0, 0)";
+                ctx.fillStyle = this.bodySpotColor;
                 ctx.rect(x + 0.3 * w, y + 0.2 * h, 0.2 * w, 0.2 * h);
                 ctx.rect(x + 0.0 * w, y + 0.3 * h, 0.2 * w, 0.2 * h);
                 ctx.rect(x + 0.5 * w, y + 0.3 * h, 0.2 * w, 0.2 * h);
@@ -759,21 +758,25 @@
                 return;
             };
 
+            // Starts out alive
+            o.bodyMainColor = "#FFF";
+            o.bodySpotColor = "#000";
             o.alive = true;
             o.age = startAge_months * 30 * 24 * 3600;
             o.maxAge = 8 * 365 * 24 * 3600;
             o.growthRate  = 12 * 30 * 24 * 3600 / 60;
             o.growthChart = createCowGrowthChart();
             o.updateAnimal = function () {
+                if (this.alive && this.age > this.maxAge) {
+                    this.alive = false;
+                    this.bodyMainColor = "#353";
+                }
                 if (this.alive) {
                     var result = this.growthChart.compute_size(this.age);
                     this.mass_kg = result[0];
                     // Cows grow upward with feet in same place
                     this.pos[1] = this.pos[1] + this.size[1] - result[1];
                     this.size = [1.5 * result[1], result[1]];
-                    if (this.age > this.maxAge) {
-                        this.alive = false;
-                    }
                 } else {
                     // Decay and then disappear
                 }
