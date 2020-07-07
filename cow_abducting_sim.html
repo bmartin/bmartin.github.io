@@ -18,7 +18,9 @@
             <dt>Keyboard:</dt>
             <dd>Use arrow keys or "w", "a", "d" to control the rockets yourself.</dd>
             <dd>Use down arrow or "s" for tractor beam.</dd>
-            <dd>Use "space" to drop hay.</dd>
+            <dd>Use "space" to drop item.</dd>
+            <dd>Use "1" to drop hay.</dd>
+            <dd>Use "2" to drop hay.</dd>
             <dt>Pause:</dt>
             <dd>Press "Esc" to pause.</dd>
         </dl>
@@ -364,6 +366,37 @@
                     }
                 }
                 return;
+            },
+            "getObjectsInBox" : function (box) {
+                var result = [];
+                OBJECT:
+                for (var i = 0; i < this.objects.length; i++) {
+                    var o = this.objects[i];
+                    if (!"pos" in o || !"size" in o) {
+                        continue OBJECT;
+                    }
+                    for (var dim = 0; dim < 2; dim++) {
+                        if (o.pos[dim] + o.size[dim] < box[dim]) {
+                            continue OBJECT;
+                        } else if (o.pos[dim] > box[dim] + box[dim+2]) {
+                            continue OBJECT;
+                        }
+                    }
+                    // Not outside of box
+                    result.push(o);
+                }
+                return result;
+            },
+            "removeObject" : function (o) {
+                var i = 0;
+                while (i < this.objects.length) {
+                    if (this.objects[i] === o) {
+                        this.objects.splice(i, 1);
+                    } else {
+                        i++;
+                    }
+                }
+                return;
             }
         };
 
@@ -497,7 +530,7 @@
                             continue OTHER;
                         } else if (next_pos[i] > other.pos[i] + other.size[i]) {
                             // Doesn't reach object
-                            //     [other] <-[this]
+                            //     [other] <-fi[this]
                             continue OTHER;
                         } else {
                             // Might collide, or might already be inside
@@ -801,7 +834,7 @@
                 if (this.mass_kg) {
                     f[1] = f[1] + world.g * this.mass_kg;
                 }
-        
+
                 this.a[0] = f[0] / this.mass_kg;
                 this.a[1] = f[1] / this.mass_kg;
                 
@@ -840,12 +873,12 @@
                 "jetMaxForce" : [1 * liftingForce, 3 * liftingForce, 1 * liftingForce],
                 "jetAngles" : [0, 1.5 * Math.PI, Math.PI],
                 "beams" : [],
-                // Measured in multiples of the ship height size
-                "beamStartWidth" : 1,
+                "inventory" : [],
                 "beamHeight" : 5,
                 "bodyStyle" : { "fillStyle" : "#eee", "strokeStyle" : "#444"},
                 "accentStyle" : { "fillStyle" : "#e00", "strokeStyle" : "#000000ff"},
                 "cockpitStyle" : { "fillStyle" : "rgb(95, 199, 199, 100)", "strokeStyle" : "rgb(40, 100, 100)"},
+                "hatchOpen" : false,
                 "draw": function(box) {
                     // console.log("drawing ship");
                     
@@ -857,55 +890,71 @@
                     // Draw jets last so we can see them
                     if (this.jets[0] > 0) {
                         // to do: make transparency a function of force
-                        ctx.fillStyle = "#ff3333";
                         ctx.beginPath();
+                        ctx.fillStyle = "#ff3333";
                         ctx.moveTo(xCenter, yCenter);
                         ctx.lineTo(xCenter - 1.0 * box[2], yCenter + box[3] / 5);
                         ctx.lineTo(xCenter - 1.2 * box[2], yCenter);
                         ctx.lineTo(xCenter - 1.0 * box[2], yCenter - box[3] / 5);
                         ctx.lineTo(xCenter, yCenter);
-                        ctx.fill();
                         ctx.closePath();
+                        ctx.fill();
                     }
                     if (this.jets[1] > 0) {
                         // to do: make transparency a function of force
-                        ctx.fillStyle = "#ff3333";
                         ctx.beginPath();
+                        ctx.fillStyle = "#ff3333";
                         ctx.moveTo(xCenter, yCenter);
                         ctx.lineTo(xCenter + box[2] / 5, yCenter + 1.0 * box[3]);
                         ctx.lineTo(xCenter,                    yCenter + 1.2 * box[3]);
                         ctx.lineTo(xCenter - box[2] / 5, yCenter + 1.0 * box[3]);
                         ctx.lineTo(xCenter, yCenter);
-                        ctx.fill();
                         ctx.closePath();
+                        ctx.fill();
                     }
                     if (this.jets[2] > 0) {
                         // to do: make transparency a function of force
-                        ctx.fillStyle = "#ff3333";
                         ctx.beginPath();
+                        ctx.fillStyle = "#ff3333";
                         ctx.moveTo(xCenter, yCenter);
                         ctx.lineTo(xCenter + 1.0 * box[2], yCenter + box[3] / 5);
                         ctx.lineTo(xCenter + 1.2 * box[2], yCenter);
                         ctx.lineTo(xCenter + 1.0 * box[2], yCenter - box[3] / 5);
                         ctx.lineTo(xCenter, yCenter);
-                        ctx.fill();
                         ctx.closePath();
+                        ctx.fill();
                     }
                     
                     // Draw beams behind body
                     var beamStartPos = [box[0] + box[2]/2, box[1] + box[3]];
                     var beamHeight = box[3] * this.beamHeight;
+                    var maxBeamWidth = 0;
                     for (var i = 0; i < this.beams.length; i++) {
-                        var beamWidth = this.beams[i] * box[2] / 2;
+                        var beamWidth = this.beams[i].width * box[2] / 4;
+                        if (beamWidth > maxBeamWidth) {
+                            maxBeamWidth = beamWidth;
+                        }
                         // transparent green beam
-                        ctx.fillStyle = "#00ff0080";
+                        ctx.fillStyle = this.beams[i].fillStyle;
                         ctx.beginPath();
-                        ctx.moveTo(beamStartPos[0],             beamStartPos[1]);
-                        ctx.lineTo(beamStartPos[0] - beamWidth, beamStartPos[1] + beamHeight);
-                        ctx.lineTo(beamStartPos[0] + beamWidth, beamStartPos[1] + beamHeight);
-                        ctx.lineTo(beamStartPos[0],             beamStartPos[1]);
+                        ctx.rect(beamStartPos[0] - beamWidth, beamStartPos[1], 2 * beamWidth, beamHeight);
                         ctx.fill();
-                        ctx.closePath();
+                    }
+
+                    // Hatch
+                    ctx.fillStyle   = this.bodyStyle.fillStyle;
+                    ctx.strokeStyle = this.bodyStyle.strokeStyle;
+                    ctx.beginPath();
+                    ctx.rect(box[0] + 0.25 * box[2] - maxBeamWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.rect(box[0] + 0.5 * box[2] + maxBeamWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
+                    ctx.fill();
+                    ctx.stroke();
+                    if (maxBeamWidth > 0) {
+                        ctx.fillStyle = '#0000FFAA';
+                        ctx.fillRect(box[0] + 0.5 * box[2] - maxBeamWidth, box[1] + .9 * box[3], 2 * maxBeamWidth, 0.2 * box[3]);
                     }
                     
                     //body
@@ -934,6 +983,32 @@
                     ctx.fill();
                     ctx.stroke();
                     ctx.closePath();
+
+
+                    // Items
+                    if (this.inventory.length > 0) {
+                        var inventoryBox = [box[0] + 0.25 * box[2], box[1] + 0.5 * box[3], 0.5 * box[2], 0.4 * box[3]];
+
+                        // Draw inventory box
+                        ctx.fillStyle = "#000a";
+                        ctx.fillRect(...inventoryBox);
+                        ctx.strokeStyle = "#dfd";
+                        ctx.strokeRect(...inventoryBox);
+
+                        var width = inventoryBox[2] / (1 + this.inventory.length);
+                        var gap = (inventoryBox[2] - width * this.inventory.length) / (this.inventory.length + 1);
+
+                        for (var i = 0; i < this.inventory.length; i++) {
+                            // Draw item in ship
+                            var item = this.inventory[i];
+                            var height = width * item.size[1] / item.size[0];
+                            var itemBox = [inventoryBox[0] + (i + 1) * gap + i * width,
+                                           inventoryBox[1] + inventoryBox[3] - height,
+                                           width, height ];
+                            // Draw box
+                            item.draw(itemBox);
+                        }
+                    }
                 },
                 "updatePhysics" : updatePhysicsSub,
                 "updateAI" : function(delta_ms) {
@@ -1017,19 +1092,27 @@
                     }
                     
                     // Update tractor beams
-                    for (var i = 0; i < this.beams.length; i++) {
+                    var i = 0;
+                    while (i < this.beams.length) {
+                        var beam = this.beams[i];
+    
                         // Beams disappear over 1 second
-                        this.beams[i] = this.beams[i] - this.beamStartWidth / 1000 * delta_ms;
-                    }
-                    // Delete empty beams
-                    var beamNum = 0;
-                    while (beamNum < this.beams.length) {
-                        if (this.beams[beamNum] <= 0) {
-                            this.beams.splice(beamNum, 1);
+                        beam.age_ms = beam.age_ms + delta_ms;
+                        if (beam.age_ms > beam.maxAge_ms) {
+                            // Delete empty beams
+                            this.beams.splice(i, 1);
                         } else {
-                            beamNum = beamNum + 1;
+                            if (beam.age_ms < 0.5 * beam.maxAge_ms) {
+                                // Beam growing to full size
+                                beam.width = 2 * beam.age_ms / beam.maxAge_ms;
+                            } else {
+                                // Beam shrinking
+                                beam.width = 2 * (beam.maxAge_ms - beam.age_ms) / beam.maxAge_ms;
+                            }
+                            i++;
                         }
                     }
+                    this.hatchOpen = (this.beams.length > 0);
                     
                     // Try to pick up objects
                     var beamStartPos = [this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]];
@@ -1055,13 +1138,37 @@
                         }
                         // Could be in  one of the beams
                         for (var j = 0; j < this.beams.length; j++) {
-                            var beamWidth = this.beams[j] * this.size[1];
+                            var beamWidth = 0.25 * this.beams[j].width * this.size[0];
                             if (other.pos[0] > beamStartPos[0] - beamWidth && other.pos[0] < beamStartPos[0] + beamWidth) {
                                 // In beam
                                 other.v[1] = other.v[1] - 1;
                                 // Pull down by weight of object picked up
                                 f[1] = f[1] + other.mass_kg * world.g;
                             }
+                        }
+                    }
+
+                    if (this.hatchOpen) {
+                        // Look for objects to pick up
+                        var pickupBox = [this.pos[0] + 0.25 * this.size[0],
+                                         this.pos[1] + 0.9 * this.size[1],
+                                         0.5 * this.size[0], 0.2 * this.size[1]];
+                        var objects = world.getObjectsInBox(pickupBox);
+                        for (var i = 0; i < objects.length; i++) {
+                            var other = objects[i];
+                            if (this === other) {
+                                continue;
+                            }
+                            if (!('mass_kg' in other)) {
+                                continue;
+                            }
+                            if (!('v' in other)) {
+                                continue;
+                            }
+                            // Time to grab it
+                            this.inventory.push(other);
+                            world.removeObject(other);
+                            this.mass_kg = this.mass_kg + other.mass_kg;
                         }
                     }
 
@@ -1077,7 +1184,12 @@
                     return;
                 },
                 addBeam : function () {
-                    this.beams.push(this.beamStartWidth);
+                    this.beams.push({
+                        age_ms : 0,
+                        maxAge_ms : 1000,
+                        width : 0,
+                        fillStyle : "#00ff0080",
+                    });
                     return;
                 },
                 dropItem : function (item) {
@@ -1160,10 +1272,17 @@
                         // pushed up or w
                         this.jets[1] = 0;
                     } else if(e.keyCode == 32) {
-                        // drop a hay bale
+                        // drop a item from inventory
+                        if (this.inventory.length > 0) {
+                            var o = this.inventory.pop();
+                            this.mass_kg = this.mass_kg - o.mass_kg;
+                            this.dropItem(o);
+                        }
+                    } else if(e.keyCode == 49) {
+                        // 1 -> drop a hay bale
                         this.addHayBale();
-                    } else if(e.keyCode == 67) {
-                        // drop a hay bale
+                    } else if(e.keyCode == 50) {
+                        // 1 -> drop a cow
                         this.addCow();
                     } else if(e.keyCode == 83 || e.keyCode == 40) {
                         this.addBeam();
