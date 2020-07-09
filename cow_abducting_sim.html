@@ -136,6 +136,17 @@
         ctx.canvas.height = innerHeight * .9;
         
 
+        // Game object system functions
+        
+        function AssertRequiredFields (o, requiredFields) {
+            for (var i = 0; i < requiredFields.length; i++) {
+                if (!(requiredFields[i] in o)) {
+                    throw new Error('animals require ' + requiredFields[i]);
+                }
+            }
+            return;
+        }
+
         function createInvisibleBoundingBox (pos, size, bounce_rho) {
             // No mass is the same as infinite                                
             var o = {
@@ -734,17 +745,12 @@
         // Animals live and grow.
         function addAnimalRole (o) {
             // Animals require:
-            const requiredFields = [
+            AssertRequiredFields(o, [
                 'maxAge_s', 'die',
                 'growthChart', 'growthRate', 
                 // Physics
                 'pos', 'size'
-            ];
-            for (var i = 0; i < requiredFields.length; i++) {
-                if (!(requiredFields[i] in o)) {
-                    throw new Error('animals require ' + requiredFields[i]);
-                }
-            }
+            ]);
             
             if (!('age_s' in o)) {
                 o.age_s = 0;
