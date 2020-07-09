@@ -713,14 +713,8 @@
             return o;
         }
 
-        // Cow growth chart
-        function createCowGrowthChart () {
-            var growth_chart = {
-                age_months : [0,     1,    2,    3,    4,    5,    6,    7,    8,   9,    10,   11,   12,   14,   16,   18,   20, 60,     96],
-                weight_lbs : [90,  115,  155,  205,  260,  318,  380,  438,  490, 543,   590,  635,  685,  753,  820,  890,  960, 1345, 1364],
-                height_in :  [29, 30.5, 32.2, 34.3, 36.3, 37.7, 39.5, 41.2, 42.5, 43.6, 44.5, 45.2, 46.0, 47.5, 48.6, 49.5, 50.5, 54.3, 54.3]
-            };
-
+        // Animal growth chart
+        function createGrowthChart (growth_chart) {
             growth_chart.compute_size = function (age_seconds) {
                 var age_in_months = age_seconds / (30 * 24 * 3600);
 
@@ -740,9 +734,113 @@
             return growth_chart;
         }
 
-        function createCow (startPos, startAge_months) {
-            var o = createPhysicsObject(startPos, [1, 1], 1, 0.1);
+        // Animals live and grow.
+        function addAnimalRole (o) {
+            // Animals require:
+            const requiredFields = [
+                'maxAge_s', 'die',
+                'growthChart', 'growthRate', 
+                // Physics
+                'pos', 'size'
+            ];
+            for (var i = 0; i < requiredFields.length; i++) {
+                if (!(requiredFields[i] in o)) {
+                    throw new Error('animals require ' + requiredFields[i]);
+                }
+            }
+            
+            if (!('age_s' in o)) {
+                o.age_s = 0;
+            }
 
+            o.alive = (o.age_s < o.maxAge_s);
+
+            // Update initial size
+            var result = o.growthChart.compute_size(this.age_s);
+            o.mass_kg = result[0];
+            // Animals grow upward with feet in same place
+            o.pos[1] = o.pos[1] + o.size[1] - result[1];
+            o.size = [1.5 * result[1], result[1]];
+
+            var updateFcn = o.update;
+            o.update = function (delta_ms) {
+                this.age_s = this.age_s + delta_ms / 1000 * this.growthRate;
+
+                if (this.alive && this.age_s > this.maxAge_s) {
+                    this.alive = false;
+                    this.die();
+                }
+                if (this.alive) {
+                    var result = this.growthChart.compute_size(this.age_s);
+                    this.mass_kg = result[0];
+                    // Cows grow upward with feet in same place
+                    this.pos[1] = this.pos[1] + this.size[1] - result[1];
+                    this.size = [1.5 * result[1], result[1]];
+                } else {
+                    // Decay and then disappear
+                }
+                    
+                // Adjust acceleration based on input forces
+                var f = [0, 0];
+                
+                // Drag can be modeled more accurately than this.
+
+                // Density in atmospheres
+                var density = 1;
+                f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
+                f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
+                
+                // Gravity
+                //   F = m * a => F = m * g
+                if (this.mass_kg) {
+                    f[1] = f[1] + world.g * this.mass_kg;
+                }
+
+                this.a[0] = f[0] / this.mass_kg;
+                this.a[1] = f[1] / this.mass_kg;
+                
+                updateFcn.call(this, delta_ms);
+                // Move based on acceleration
+                this.updatePhysics(delta_ms);
+                return;
+            };
+
+            return;
+        }
+
+        // Cow growth chart
+        function createCowGrowthChart () {
+            var growth_chart = {
+                age_months : [0,     1,    2,    3,    4,    5,    6,    7,    8,   9,    10,   11,   12,   14,   16,   18,   20, 60,     96],
+                weight_lbs : [90,  115,  155,  205,  260,  318,  380,  438,  490, 543,   590,  635,  685,  753,  820,  890,  960, 1345, 1364],
+                height_in :  [29, 30.5, 32.2, 34.3, 36.3, 37.7, 39.5, 41.2, 42.5, 43.6, 44.5, 45.2, 46.0, 47.5, 48.6, 49.5, 50.5, 54.3, 54.3]
+            };
+            growth_chart = createGrowthChart(growth_chart);
+            return growth_chart;
+        }
+        
+        function createCow (startPos) {
+            var o = createPhysicsObject(startPos, [1, 1], 1, 0.1);
+            
+            o.maxAge_s = 8 * 365 * 24 * 3600;
+            o.growthChart = createCowGrowthChart();
+            o.growthRate  = 12 * 30 * 24 * 3600 / 60;
+            o.die = function () {
+                this.bodyMainColor = "#353";
+                return;
+            };
+            var oldUpdate = o.update;
+            o.update = function (delta_ms) {
+                // Handle AI here
+                
+                // Call previous update
+                return oldUpdate.call(this, delta_ms);
+            };
+
+            addAnimalRole(o);
+            
+            o.bodyMainColor = "#FFF";
+            o.bodySpotColor = "#000";
             o.draw = function (box) {
                 var x = box[0];
                 var y = box[1];
@@ -791,60 +889,6 @@
                 return;
             };
 
-            // Starts out alive
-            o.bodyMainColor = "#FFF";
-            o.bodySpotColor = "#000";
-            o.alive = true;
-            o.age = startAge_months * 30 * 24 * 3600;
-            o.maxAge = 8 * 365 * 24 * 3600;
-            o.growthRate  = 12 * 30 * 24 * 3600 / 60;
-            o.growthChart = createCowGrowthChart();
-            o.updateAnimal = function () {
-                if (this.alive && this.age > this.maxAge) {
-                    this.alive = false;
-                    this.bodyMainColor = "#353";
-                }
-                if (this.alive) {
-                    var result = this.growthChart.compute_size(this.age);
-                    this.mass_kg = result[0];
-                    // Cows grow upward with feet in same place
-                    this.pos[1] = this.pos[1] + this.size[1] - result[1];
-                    this.size = [1.5 * result[1], result[1]];
-                } else {
-                    // Decay and then disappear
-                }
-                return;
-            };
-            o.update = function (delta_ms) {
-                this.age = this.age + delta_ms / 1000 * this.growthRate;
-                this.updateAnimal();
-                    
-                // Adjust acceleration based on input forces
-                var f = [0, 0];
-                
-                // Drag can be modeled more accurately than this.
-
-                // Density in atmospheres
-                var density = 1;
-                f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
-                f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
-                
-                // Gravity
-                //   F = m * a => F = m * g
-                if (this.mass_kg) {
-                    f[1] = f[1] + world.g * this.mass_kg;
-                }
-
-                this.a[0] = f[0] / this.mass_kg;
-                this.a[1] = f[1] / this.mass_kg;
-                
-                // Move based on acceleration
-                this.updatePhysics(delta_ms);
-                return;
-            };
-
-            // Start at correct size
-            o.updateAnimal();
             return o;
         }
 
