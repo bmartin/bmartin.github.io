@@ -592,6 +592,21 @@
 
             if (first_collide_obj !== null) {
                 this.pos = first_collide_pos;
+
+                // Collision damage
+                if ('health' in this) {
+                    var speedChange = Math.sqrt((this.v[0] - first_collide_v[0]) * (this.v[0] - first_collide_v[0])
+                         + (this.v[1] - first_collide_v[1]) * (this.v[1] - first_collide_v[1]));
+                    if (speedChange < .5) {
+                        // No damage
+                    } else {
+                        // Damage is based on 
+                        this.health = this.health - speedChange;
+                        if (this.health < 0) {
+                            this.health = 0;
+                        }
+                    }
+                }
                 this.v = first_collide_v;
             } else {
                 this.pos = next_pos;
@@ -935,11 +950,15 @@
                 "jetAngles" : [0, 1.5 * Math.PI, Math.PI],
                 "beams" : [],
                 "inventory" : [],
+                "health" : 100,
+                "maxHealth" : 100,
+                "healthRegenPerSecond" : 5,
                 "beamHeight" : 5,
                 "bodyStyle" : { "fillStyle" : "#eee", "strokeStyle" : "#444"},
                 "accentStyle" : { "fillStyle" : "#e00", "strokeStyle" : "#000000ff"},
                 "cockpitStyle" : { "fillStyle" : "rgb(95, 199, 199, 100)", "strokeStyle" : "rgb(40, 100, 100)"},
                 "hatchOpen" : false,
+                "cracks" : [],
                 "draw": function(box) {
                     // console.log("drawing ship");
                     
@@ -1032,8 +1051,11 @@
                     ctx.strokeStyle = this.accentStyle.strokeStyle;
                     ctx.beginPath();
                     ctx.ellipse(xCenter, y + 0.66 * box[3], box[2]/2, 0.05 * box[3], 0, 0, 2 * Math.PI);
-                    ctx.fill();
                     ctx.stroke();
+                    ctx.closePath();
+                    ctx.beginPath();
+                    ctx.ellipse(xCenter, y + 0.66 * box[3], this.health / this.maxHealth * box[2]/2, this.health / this.maxHealth * 0.05 * box[3], 0, 0, 2 * Math.PI);
+                    ctx.fill();
                     ctx.closePath();
                     
                     // cockpit
@@ -1045,6 +1067,17 @@
                     ctx.stroke();
                     ctx.closePath();
 
+                    for (var i = 0; i < this.cracks.length; i++) {
+                        var crack = this.cracks[i];
+                        ctx.strokeStyle = this.cockpitStyle.strokeStyle;
+                        ctx.beginPath();
+                        ctx.moveTo(box[0] + crack[0][0] * box[2], box[1] + crack[0][1] * box[3]);
+                        for (var iStroke = 1; iStroke < crack.length; iStroke++) {
+                            ctx.lineTo(box[0] + crack[iStroke][0] * box[2], box[1] + crack[iStroke][1] * box[3]);
+                        }
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
 
                     // Items
                     if (this.inventory.length > 0) {
@@ -1129,6 +1162,41 @@
                         this.updateAI(delta_ms);
                     }
                     
+                    // Automatic health 
+                    if (this.health < this.maxHealth) {
+                        this.health = this.health + this.healthRegenPerSecond * delta_ms / 1000;
+                        if (this.health > this.maxHealth) {
+                            this.health = this.maxHealth;
+                        }
+                    }
+
+                    var numCracks = Math.floor(10 * (this.maxHealth - this.health) / this.maxHealth);
+                    if (this.cracks.length < numCracks) {
+                        // Add cracks at cockpit
+                        while (this.cracks.length < numCracks) {
+                            var crack = [[ 0.3 + 0.4 * Math.random(), .4]];
+                            for (var i = 0; i < 3; i++) {
+                                var lastSpot = crack[crack.length-1];
+                                var xTarget = 0.3 + 0.4 * Math.random();
+                                var yTarget = 0.4 * Math.random();
+                                crack.push([
+                                    (lastSpot[0] * (i + 1) + xTarget) / (i + 2),
+                                    (lastSpot[1] * (i + 1) + yTarget) / (i + 2)
+                                ]);
+                                crack.push([
+                                    (lastSpot[0] * (i + 2) + xTarget) / (i + 3),
+                                    (lastSpot[1] * (i + 2) + yTarget) / (i + 3)
+                                    ]);
+            
+                            }
+    
+                            this.cracks.push(crack);
+                        }
+                    } else if (this.cracks.length > numCracks) {
+                        // Remove cracks one at a time.
+                        this.cracks.pop();
+                    }
+
                     // Adjust acceleration based on input forces
                     var f = [0, 0];
                     
