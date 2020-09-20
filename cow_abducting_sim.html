@@ -852,9 +852,12 @@
             };
 
             addAnimalRole(o);
-            
-            o.bodyMainColor = "#FFF";
-            o.bodySpotColor = "#000";
+
+            var cowColorOptions = [ ["#FFF", "#000"], ["#000", "#FFF"], ["#FFF", "#8c3706" ], [ "#8c3706", "#FFF"] ];
+    
+            var cowColorScheme = cowColorOptions[Math.floor(Math.random() * cowColorOptions.length)]
+            o.bodyMainColor = cowColorScheme[0];
+            o.bodySpotColor = cowColorScheme[1];
             o.draw = function (box) {
                 var x = box[0];
                 var y = box[1];
@@ -876,7 +879,7 @@
                 }
 
                 // body
-                ctx.strokeStyle = "#000";
+                ctx.strokeStyle = this.bodySpotColor;
                 ctx.fillStyle = this.bodyMainColor;
                 ctx.beginPath();
                 // Main body
