@@ -343,8 +343,25 @@
                         
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
+                    if (!"draw" in o) {
+                        // Non-drawable object
+                        next;
+                    }
+                    if ("hidden" in o && o.hidden) {
+                        next;
+                    }
+                    if ("alpha" in o) {
+                        if (o.alpha <= 0) {
+                            // invisible, don't draw
+                            next;
+                        } else {
+                            ctx.globalAlpha = o.alpha;
+                        }
+                    } else {
+                        ctx.globalAlpha = 1;
+                    }
                     if ('size' in o) {
-                        var visible =
+                        var visible =   
                             (o.pos[0] + o.size[0] > this.view[0]) &&
                             (o.pos[1] + o.size[1] > this.view[1]) &&
                             (o.pos[0] < this.view[0] + this.view[2]) &&
@@ -363,7 +380,7 @@
                                 ctx.strokeRect(box[0], box[1], box[2], box[3]);
                             }
                         }
-                    } else if ("draw" in o && !o.hidden) {
+                    } else {
                         // dimensionless object to draw
                         o.draw([0, 0, canvas.width, canvas.height]);
                     }
@@ -772,7 +789,7 @@
         function addAnimalRole (o) {
             // Animals require:
             AssertRequiredFields(o, [
-                'maxAge_s', 'die',
+                'maxAge_s', 'health', 'maxHealth', 'die',
                 'growthChart', 'growthRate', 
                 // Physics
                 'pos', 'size'
@@ -782,7 +799,7 @@
                 o.age_s = 0;
             }
 
-            o.alive = (o.age_s < o.maxAge_s);
+            o.alpha = 1;
 
             // Update initial size
             var result = o.growthChart.compute_size(this.age_s);
@@ -795,11 +812,14 @@
             o.update = function (delta_ms) {
                 this.age_s = this.age_s + delta_ms / 1000 * this.growthRate;
 
+                // die of old age
                 if (this.alive && this.age_s > this.maxAge_s) {
-                    this.alive = false;
+                    this.health = 0;
                     this.die();
                 }
-                if (this.alive) {
+
+                // Grow
+                if (this.health > 0) {
                     var result = this.growthChart.compute_size(this.age_s);
                     this.mass_kg = result[0];
                     // Cows grow upward with feet in same place
@@ -807,6 +827,10 @@
                     this.size = [1.5 * result[1], result[1]];
                 } else {
                     // Decay and then disappear
+                    this.alpha = this.alpha - delta_ms / 10000;
+                    if (this.alpha < 0) {
+                        world.removeObject(this);
+                    }
                 }
                     
                 // Adjust acceleration based on input forces
@@ -866,6 +890,8 @@
                 return oldUpdate.call(this, delta_ms);
             };
 
+            o.health = 25;
+            o.maxHealth = 25;
             addAnimalRole(o);
 
             var cowColorOptions = [ ["#FFF", "#000"], ["#000", "#FFF"], ["#FFF", "#8c3706" ], [ "#8c3706", "#FFF"] ];
@@ -879,7 +905,7 @@
                 var w = box[2];
                 var h = box[3];
                 
-                if (this.alive) {
+                if (this.health > 0) {
                     // Normal
                 } else {
                     // Gray-green body upside down
