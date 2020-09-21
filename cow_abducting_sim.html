@@ -35,7 +35,7 @@
                 </td>
             </tr>
         </table>
-        
+
         <p> Try moving your mouse around and clicking. It'll get more fun when we add cows. :)</p>
         <p>By Oliver, Ben, and Carter Martin</p>
     </div>
@@ -46,7 +46,7 @@
             bg.size[1] - 100 / 2 - cowHeight / 2,
             ];
         };
-        
+
         var makeCow = function(startX, startY, startWidth, startHeight) {
             var cow = {
                 "pos" : [ startX, startY ],
@@ -68,7 +68,7 @@
                             this.v[i] = 0;
                         }
                     }
-                    
+
                     // Update speed
                     for (var i = 0; i < 2; i++) {
                         var err = this.goal[i] - this.pos[i];
@@ -82,7 +82,7 @@
                             }
                         }
                     }
-                    
+
                     var xSatisfied = abs(this.goal[0] - this.pos[0]) < this.size[0]/2;
                     var ySatisfied = abs(this.goal[1] - this.pos[1]) < this.size[1]/2;
                     if (xSatisfied && ySatisfied) {
@@ -93,7 +93,7 @@
                 "draw": function(view) {
                     var x = this.pos[0] - view[0];
                     var y = this.pos[1] - view[1];
-                    
+
                     //cockpit
                     fill(95, 199, 199);
                     ellipse(x, y - this.size[1] / 2, this.size[0] * 3 / 4, this.size[1] );
@@ -107,7 +107,7 @@
             };
             return cow;
         };
-        
+
         for (var i = 0; i < 10; i++) {
             var cowWidth = Math.random(50, 100);
             var cowHeight = cowWidth/2;
@@ -120,35 +120,35 @@
         for (var i = 0; i < cows.length; i++) {
             bg.objects.push(cows[i]);
         }
-        
+
         // debug(bg);
-        
+
         mouseClicked = function() {
             ship.beams.push(ship.beamStartSize);
         };
-        
+
         draw = function() {
             ship.goal = [mouseX + bg.view[0], mouseY + bg.view[1]];
-            
+
             // Simulation
             bg.update();
-            
+
             // Drawing
             bg.draw();
-            
+
             return;
         };
     -->
     <script>
         var canvas = document.getElementById("myCanvas");
         var ctx = canvas.getContext("2d");
-        
+
         ctx.canvas.width = innerWidth - 100;
         ctx.canvas.height = innerHeight * .9;
-        
+
 
         // Game object system functions
-        
+
         function AssertRequiredFields (o, requiredFields) {
             for (var i = 0; i < requiredFields.length; i++) {
                 if (!(requiredFields[i] in o)) {
@@ -159,7 +159,7 @@
         }
 
         function createInvisibleBoundingBox (pos, size, bounce_rho) {
-            // No mass is the same as infinite                                
+            // No mass is the same as infinite
             var o = {
                 "pos"  : pos,
                 "size" : size,
@@ -235,13 +235,13 @@
                 // Convert to world space
                 var x = relativeX / this.zoom + this.view[0];
                 var y = relativeY / this.zoom + this.view[1];
-                
+
                 for (var i = 0; i < this.objects.length; i++) {
                     if (this.objects[i].handleMouseMove) {
                         this.objects[i].handleMouseMove(x, y);
                     }
                 }
-                
+
                 return;
             },
             handleClick : function(relativeX, relativeY) {
@@ -263,7 +263,7 @@
                         this.objects[i].handleClick(x, y);
                     }
                 }
-                
+
                 return;
             },
             handleKeyDown : function(e) {
@@ -296,11 +296,11 @@
             },
             "draw": function() {
                 // console.log("drawing world");
-                
+
                 // Update viewport to keep focus item in center 1/2 of screen if possible
                 if (this.focus) {
                     // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
-                    
+
                     this.zoom = 100 / this.focus.size[0];
                     //  *
                     //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
@@ -311,7 +311,7 @@
                     // }
                     this.view[2] = canvas.width  / this.zoom;
                     this.view[3] = canvas.height / this.zoom;
-                    
+
                     // Now center view. Desired state is for view and focus to have same center:
                     //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
                     // or
@@ -340,7 +340,7 @@
                     this.view[2] = canvas.height / this.zoom;
                     this.view[3] = canvas.width  / this.zoom;
                 }
-                        
+
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
                     if (!("draw" in o)) {
@@ -361,7 +361,7 @@
                         ctx.globalAlpha = 1;
                     }
                     if ('size' in o) {
-                        var visible =   
+                        var visible =
                             (o.pos[0] + o.size[0] > this.view[0]) &&
                             (o.pos[1] + o.size[1] > this.view[1]) &&
                             (o.pos[0] < this.view[0] + this.view[2]) &&
@@ -385,14 +385,14 @@
                         o.draw([0, 0, canvas.width, canvas.height]);
                     }
                 }
-                
+
                 // Draw UI elements over the rest of the screen
                 for (var i = 0; i < this.uiObjects.length; i++) {
                     if (!this.uiObjects[i].hidden) {
                         this.uiObjects[i].draw();
                     }
                 }
-                
+
                 return;
             },
             "update" : function(delta_ms) {
@@ -456,16 +456,16 @@
         world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0] + 2, 2], 1));
         world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
         world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
-       
+
         function createStarField(x, y, w, h, numStars) {
             var starField = {
                 pos : [x, y],
                 "size" : [w, h],
                 "stars" : [],
-                "draw": function(box) {                
+                "draw": function(box) {
                     ctx.fillStyle = "#000";
                     ctx.fillRect(box[0], box[1], box[2], box[3]);
-                    
+
                     // Star position obeys zoom, but size does not.
                     var zoom = box[2] / this.size[0];
                     for (var i = 0; i < this.stars.length; i++) {
@@ -474,7 +474,7 @@
                         var screenY = star[1] * zoom + box[1];
                         var screenR = star[2];
                         var visible = screenX + screenR > 0 && screenX - screenR < box[2] &&
-                                      screenY + screenR > 0 && screenY - screenR < box[3]; 
+                                      screenY + screenR > 0 && screenY - screenR < box[3];
                         if (visible) {
                             ctx.beginPath();
                             ctx.fillStyle = "#eee";
@@ -492,12 +492,12 @@
             return starField;
         }
         world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 100));
-        
+
         function createGroundBackground(x, y, w, h) {
             var obj = {
                 pos   : [x, y],
                 size  : [w, h],
-                draw  : function(box) {                
+                draw  : function(box) {
                     ctx.fillStyle = "#0e0";
                     ctx.fillRect(box[0], box[1], box[2], box[3]);
                     return;
@@ -513,7 +513,7 @@
 
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
-            
+
             // Update speed (subject to collision)
             for (var i = 0; i < 2; i++) {
                 this.v[i] = this.v[i] + this.a[i] * delta_s;
@@ -524,7 +524,7 @@
                 this.pos[0] + this.v[0] * delta_s,
                 this.pos[1] + this.v[1] * delta_s
             ];
-            
+
             // Collision detection
             var first_collide_obj = null;
             var first_collide_pos = [...next_pos];
@@ -533,7 +533,7 @@
             var no_collide_distance = Math.sqrt(
                 (next_pos[0] - this.pos[0]) * (next_pos[0] - this.pos[0])
                 + (next_pos[1] - this.pos[1]) * (next_pos[1] - this.pos[1]));
-    
+
             OTHER:
             for (var iObj = 0; iObj < world.objects.length; iObj++) {
                 var other = world.objects[iObj];
@@ -632,7 +632,7 @@
                     if (speedChange < .5) {
                         // No damage
                     } else {
-                        // Damage is based on 
+                        // Damage is based on
                         this.health = this.health - speedChange;
                         if (this.health < 0) {
                             this.health = 0;
@@ -721,9 +721,9 @@
             return;
         }
 
-        
+
         function createPhysicsObject (startPos, size, mass_kg, bounce_rho) {
-            
+
             var o = {
                 "pos"  : startPos,
                 "size" : size,
@@ -733,26 +733,26 @@
                 "bounce_rho" : bounce_rho,
                 "updatePhysics" : updatePhysicsSub,
                 "update" : function(delta_ms) {
-                    
+
                     // Adjust acceleration based on input forces
                     var f = [0, 0];
-                    
+
                     // Drag can be modeled more accurately than this.
 
                     // Density in atmospheres
                     var density = 1;
                     f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
                     f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
-                    
+
                     // Gravity
                     //   F = m * a => F = m * g
                     if (this.mass_kg) {
                         f[1] = f[1] + world.g * this.mass_kg;
                     }
-            
+
                     this.a[0] = f[0] / this.mass_kg;
                     this.a[1] = f[1] / this.mass_kg;
-                    
+
                     // Move based on acceleration
                     this.updatePhysics(delta_ms);
                 }
@@ -762,7 +762,7 @@
 
         function createHayBale () {
             var startPos = [0, 0];
-            
+
             // 16" x 18" x 4', 100 lb
             var w_m = 4 * 12 * 2.54 / 100;
             var h_m = 16 * 2.54 / 100;
@@ -773,7 +773,7 @@
             // Aluminum is 2.7 g/cm^3, which is 2,710kg/m^3
             var volume_m3 = w_m * h_m * d_m;
             var mass_kg = 100 / 2.2;
-                                
+
             var o = createPhysicsObject(startPos, [w_m, h_m], mass_kg, 0.1);
             o.draw = drawHayBale;
 
@@ -806,11 +806,11 @@
             // Animals require:
             AssertRequiredFields(o, [
                 'maxAge_s', 'health', 'maxHealth', 'die',
-                'growthChart', 'growthRate', 
+                'growthChart', 'growthRate',
                 // Physics
                 'pos', 'size'
             ]);
-            
+
             if (!('age_s' in o)) {
                 o.age_s = 0;
             }
@@ -848,17 +848,17 @@
                         world.removeObject(this);
                     }
                 }
-                    
+
                 // Adjust acceleration based on input forces
                 var f = [0, 0];
-                
+
                 // Drag can be modeled more accurately than this.
 
                 // Density in atmospheres
                 var density = 1;
                 f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
                 f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
-                
+
                 // Gravity
                 //   F = m * a => F = m * g
                 if (this.mass_kg) {
@@ -867,7 +867,7 @@
 
                 this.a[0] = f[0] / this.mass_kg;
                 this.a[1] = f[1] / this.mass_kg;
-                
+
                 updateFcn.call(this, delta_ms);
                 // Move based on acceleration
                 this.updatePhysics(delta_ms);
@@ -887,11 +887,11 @@
             growth_chart = createGrowthChart(growth_chart);
             return growth_chart;
         }
-        
+
         function createCow () {
             var startPos = [0, 0];
             var o = createPhysicsObject(startPos, [1, 1], 1, 0.1);
-            
+
             o.maxAge_s = 8 * 365 * 24 * 3600;
             o.growthChart = createCowGrowthChart();
             o.growthRate  = 12 * 30 * 24 * 3600 / 60;
@@ -902,7 +902,7 @@
             var oldUpdate = o.update;
             o.update = function (delta_ms) {
                 // Handle AI here
-                
+
                 // Call previous update
                 return oldUpdate.call(this, delta_ms);
             };
@@ -912,7 +912,7 @@
             addAnimalRole(o);
 
             var cowColorOptions = [ ["#FFF", "#000"], ["#000", "#FFF"], ["#FFF", "#8c3706" ], [ "#8c3706", "#FFF"] ];
-    
+
             var cowColorScheme = cowColorOptions[Math.floor(Math.random() * cowColorOptions.length)]
             o.bodyMainColor = cowColorScheme[0];
             o.bodySpotColor = cowColorScheme[1];
@@ -921,7 +921,7 @@
                 var y = box[1];
                 var w = box[2];
                 var h = box[3];
-                
+
                 if (this.health > 0) {
                     // Normal
                 } else {
@@ -968,16 +968,16 @@
         }
 
         function createShip (width_m, startPos) {
-            
+
             // Mass is a function of the volume.
             // Approximate as sphere of 50% aluminum by volume.
             // Aluminum is 2.7 g/cm^3, which is 2,710kg/m^3
             var volume_m3 = 4 / 3 * Math.PI * (width_m / 2);
             var mass_kg = volume_m3 * 2710;
-            
+
             // Define thrusters based on force required to accelerate at 1g.
             var liftingForce = mass_kg * 9.8;
-            
+
             var ship = {
                 "pos"  : startPos,
                 "size" : [width_m, 0.75 * width_m],
@@ -1004,12 +1004,12 @@
                 "cracks" : [],
                 "draw": function(box) {
                     // console.log("drawing ship");
-                    
+
                     var x = box[0];
                     var y = box[1];
                     var xCenter = box[0] + box[2] / 2;
                     var yCenter = box[1] + box[3] / 2;
-                    
+
                     // Draw jets last so we can see them
                     if (this.jets[0] > 0) {
                         // to do: make transparency a function of force
@@ -1047,7 +1047,7 @@
                         ctx.closePath();
                         ctx.fill();
                     }
-                    
+
                     // Draw beams behind body
                     var beamStartPos = [box[0] + box[2]/2, box[1] + box[3]];
                     var beamHeight = box[3] * this.beamHeight;
@@ -1079,7 +1079,7 @@
                         ctx.fillStyle = '#0000FFAA';
                         ctx.fillRect(box[0] + 0.5 * box[2] - maxBeamWidth, box[1] + .9 * box[3], 2 * maxBeamWidth, 0.2 * box[3]);
                     }
-                    
+
                     //body
                     ctx.fillStyle   = this.bodyStyle.fillStyle;
                     ctx.strokeStyle = this.bodyStyle.strokeStyle;
@@ -1088,7 +1088,7 @@
                     ctx.fill();
                     ctx.stroke();
                     ctx.closePath();
-                    
+
                     //body stripe
                     ctx.fillStyle   = this.accentStyle.fillStyle;
                     ctx.strokeStyle = this.accentStyle.strokeStyle;
@@ -1100,7 +1100,7 @@
                     ctx.ellipse(xCenter, y + 0.66 * box[3], this.health / this.maxHealth * box[2]/2, this.health / this.maxHealth * 0.05 * box[3], 0, 0, 2 * Math.PI);
                     ctx.fill();
                     ctx.closePath();
-                    
+
                     // cockpit
                     ctx.fillStyle   = this.cockpitStyle.fillStyle;
                     ctx.strokeStyle = this.cockpitStyle.strokeStyle;
@@ -1151,12 +1151,12 @@
                 "updateAI" : function(delta_ms) {
                     var xCenter = this.pos[0] + this.size[0] / 2;
                     var yCenter = this.pos[1] + this.size[1] / 2;
-                    
+
                     // Run autopilot
                     if (this.goal) {
                         var xErr = this.goal[0] - xCenter;
                         var yErr = this.goal[1] - yCenter;
-                        
+
                         // Fire horizontal jets toward goal
                         if (this.v[0] < -this.maxV[0]) {
                             // Emergency shut off
@@ -1170,7 +1170,7 @@
                                 this.jets[2] = 0;
                             }
                         }
-                        
+
                         if (this.v[0] > this.maxV[0]) {
                             // Emergency shut off
                             this.jets[0] = 0;
@@ -1183,7 +1183,7 @@
                                 this.jets[0] = 0;
                             }
                         }
-                        
+
                         // Fire vertical jets toward goal
                         if (this.v[0] <= -this.maxV[0]) {
                             // Emergency thruster shut off
@@ -1200,12 +1200,12 @@
                     return;
                 },
                 "update" : function(delta_ms) {
-                    
+
                     if (this.autopilot) {
                         this.updateAI(delta_ms);
                     }
-                    
-                    // Automatic health 
+
+                    // Automatic health
                     if (this.health < this.maxHealth) {
                         this.health = this.health + this.healthRegenPerSecond * delta_ms / 1000;
                         if (this.health > this.maxHealth) {
@@ -1230,9 +1230,9 @@
                                     (lastSpot[0] * (i + 2) + xTarget) / (i + 3),
                                     (lastSpot[1] * (i + 2) + yTarget) / (i + 3)
                                     ]);
-            
+
                             }
-    
+
                             this.cracks.push(crack);
                         }
                     } else if (this.cracks.length > numCracks) {
@@ -1242,32 +1242,32 @@
 
                     // Adjust acceleration based on input forces
                     var f = [0, 0];
-                    
+
                     // Drag can be modeled more accurately than this.
-                    
+
                     // Density in atmospheres
                     var density = 1;
                     f[0] = f[0] - Math.sign(this.v[0]) * 0.1 * density * this.v[0] * this.v[0];
                     f[1] = f[1] - Math.sign(this.v[0]) * 0.1 * density * this.v[1] * this.v[1];
-                    
+
                     // Gravity
                     //   F = m * a => F = m * g
                     if (this.mass_kg) {
                         f[1] = f[1] + world.g * this.mass_kg;
                     }
-                    
+
                     // Jets
                     for (var i = 0; i < this.jets.length; i++) {
                         var force = this.jets[i] * this.jetMaxForce[i];
                         f[0] = f[0] + Math.cos(this.jetAngles[i]) * force;
                         f[1] = f[1] + Math.sin(this.jetAngles[i]) * force;
                     }
-                    
+
                     // Update tractor beams
                     var i = 0;
                     while (i < this.beams.length) {
                         var beam = this.beams[i];
-    
+
                         // Beams disappear over 1 second
                         beam.age_ms = beam.age_ms + delta_ms;
                         if (beam.age_ms > beam.maxAge_ms) {
@@ -1285,7 +1285,7 @@
                         }
                     }
                     this.hatchOpen = (this.beams.length > 0);
-                    
+
                     // Try to pick up objects
                     var beamStartPos = [this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]];
                     var beamHeight = this.size[1] * this.beamHeight;
@@ -1347,9 +1347,9 @@
                     // Move based on acceleration
                     this.a[0] = f[0] / this.mass_kg;
                     this.a[1] = f[1] / this.mass_kg;
-                    
+
                     this.updatePhysics(delta_ms);
-                    
+
                     return;
                 },
                 handleMouseMove : function(x, y) {
@@ -1386,7 +1386,7 @@
                     } else {
                         // Fly to click spot
                         this.autopilot = true;
-                    
+
                         // Scale goal extra when in the border region
                         this.goal = [x, y];
                         for (var i = 0; i < 2; i++) {
@@ -1509,10 +1509,10 @@
         document.addEventListener("keyup", keyUpHandler, false);
         document.addEventListener("mousemove", mouseMoveHandler, false);
         document.addEventListener("click", clickHandler, false);
-        
         var paused = false;
+
         var last_now_ms = performance.now();
-        
+
         var pauseButton = createUITextButton ([canvas.width - 40, 10], [30, 30], '⏸');
         pauseButton.handleClick = function (x, y) {
             startPause();
@@ -1551,7 +1551,7 @@
             ctx.textAlign = "center";
             ctx.fillText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
             ctx.strokeText("Cow Abducting Simulator", canvas.width/2, canvas.height/2);
-            
+
             ctx.font = "16px Arial";
             ctx.fillStyle = "#fff";
             ctx.textAlign = "center";
@@ -1560,7 +1560,7 @@
         };
         splashScreen.handleClick = function(x, y) {
             this.hidden = true;
-            
+
             // Initial ship is 5m in center of world
             var ship = createShip(5, [world.size[0] / 2, world.size[1] / 2]);
             world.objects.push(ship);
@@ -1583,7 +1583,7 @@
             pauseScreen.hidden = true;
             last_now_ms = performance.now();
         }
-        
+
         function keyDownHandler(e) {
             // Suppress default for space and arrow keys
             if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
@@ -1610,7 +1610,7 @@
         function mouseMoveHandler(e) {
             var relativeX = e.clientX - canvas.offsetLeft;
             var relativeY = e.clientY - canvas.offsetTop;
-            
+
             world.handleMouseMove(relativeX, relativeY);
         }
         function clickHandler(e) {
@@ -1619,11 +1619,11 @@
             } else {
                 var relativeX = e.clientX - canvas.offsetLeft;
                 var relativeY = e.clientY - canvas.offsetTop;
-                
+
                 world.handleClick(relativeX, relativeY);
             }
         }
-        
+
         function draw(now_ms) {
             if (!paused) {
                 if (now_ms - last_now_ms > 1000) {
@@ -1637,13 +1637,13 @@
 
             // Draw even if paused
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            world.draw();    
-                
+            world.draw();
+
             requestAnimationFrame(draw);
         }
-        
+
         draw(performance.now());
     </script>
-    
+
 </body>
 </html>
