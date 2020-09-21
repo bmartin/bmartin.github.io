@@ -408,7 +408,7 @@
                 OBJECT:
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
-                    if (!"pos" in o || !"size" in o) {
+                    if (!("pos" in o) || !("size" in o)) {
                         continue OBJECT;
                     }
                     for (var dim = 0; dim < 2; dim++) {
