@@ -433,6 +433,20 @@
                     }
                 }
                 return;
+            },
+            "addObjectOnGround" : function(o) {
+                o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
+                world.objects.push(o);
+            },
+            "startGame" : function() {
+                // Create cows
+                for (var i = 0; i < 10; i++) {
+                    this.addObjectOnGround(createCow());
+                }
+                for (var i = 0; i < 5; i++) {
+                    this.addObjectOnGround(createHayBale());
+                }
+                return;
             }
         };
 
@@ -745,7 +759,8 @@
             return o;
         }
 
-        function createHayBale (startPos) {
+        function createHayBale () {
+            var startPos = [0, 0];
             
             // 16" x 18" x 4', 100 lb
             var w_m = 4 * 12 * 2.54 / 100;
@@ -872,7 +887,8 @@
             return growth_chart;
         }
         
-        function createCow (startPos) {
+        function createCow () {
+            var startPos = [0, 0];
             var o = createPhysicsObject(startPos, [1, 1], 1, 0.1);
             
             o.maxAge_s = 8 * 365 * 24 * 3600;
@@ -1356,10 +1372,10 @@
                     return;
                 },
                 addHayBale : function () {
-                    return this.dropItem(createHayBale([0, 0]));
+                    return this.dropItem(createHayBale());
                 },
                 addCow : function () {
-                    return this.dropItem(createCow([0, 0], 0));
+                    return this.dropItem(createCow());
                 },
                 handleClick : function(x, y) {
                     if (   x > this.pos[0] && x < this.pos[0] + this.size[0]
@@ -1450,7 +1466,7 @@
 
         var gameHudButtons = [];
 
-        var hayBaleIcon = createHayBale([0, 0]);
+        var hayBaleIcon = createHayBale();
         var hayBaleButton = createUIObjectButton([canvas.width / 2, canvas.height - 40], [30, 30], hayBaleIcon);
         hayBaleButton.handleClick = function (x, y) {
             if (world.focus != null) {
@@ -1461,7 +1477,7 @@
         gameHudButtons.push(hayBaleButton);
         world.uiObjects.push(hayBaleButton);
 
-        var cowIcon = createCow([0, 0], 12);
+        var cowIcon = createCow();
         var cowButton = createUIObjectButton([canvas.width / 2 + 50, canvas.height - 40], [30, 30], cowIcon);
         cowButton.handleClick = function (x, y) {
             if (world.focus != null) {
@@ -1536,6 +1552,7 @@
                 gameHudButtons[i].hidden = false;
             }
 
+            world.startGame();
             return;
         };
         world.uiObjects.push(splashScreen);
