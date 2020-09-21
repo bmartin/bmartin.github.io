@@ -343,17 +343,17 @@
                         
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
-                    if (!"draw" in o) {
+                    if (!("draw" in o)) {
                         // Non-drawable object
-                        next;
+                        continue;
                     }
                     if ("hidden" in o && o.hidden) {
-                        next;
+                        continue;
                     }
                     if ("alpha" in o) {
                         if (o.alpha <= 0) {
                             // invisible, don't draw
-                            next;
+                            continue;
                         } else {
                             ctx.globalAlpha = o.alpha;
                         }
@@ -446,6 +446,7 @@
                 for (var i = 0; i < 5; i++) {
                     this.addObjectOnGround(createHayBale());
                 }
+                this.objects.push(createCowGenerator());
                 return;
             }
         };
@@ -1465,6 +1466,22 @@
         }
 
         var gameHudButtons = [];
+
+        function createCowGenerator () {
+            var cowGenerator = {
+                countdown_ms : 0,
+                interval_s : 30,
+                update : function(delta_ms) {
+                    this.countdown_ms = this.countdown_ms - delta_ms;
+                    if (this.countdown_ms <= 0) {
+                        world.addObjectOnGround(createCow());
+                        this.countdown_ms = this.interval_s * 1000;
+                    }
+                    return;
+                }
+            };
+            return cowGenerator;
+        }
 
         var hayBaleIcon = createHayBale();
         var hayBaleButton = createUIObjectButton([canvas.width / 2, canvas.height - 40], [30, 30], hayBaleIcon);
