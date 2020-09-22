@@ -511,6 +511,38 @@
         // Bottom 5% is collision box for ground. Ground is moderately bouncy
         world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
 
+        function createAtmosphere(x, y, w, h) {
+            var obj = {
+                pos   : [x, y],
+                size  : [w, h],
+                draw  : function(box) {
+                    // Create a linear gradient
+                    // The start gradient point is at x=20, y=0
+                    // The end gradient point is at x=220, y=0
+                    var gradient = ctx.createLinearGradient(box[0], box[1], box[0], box[1] + box[3]);
+
+                    // Add three color stops
+                    gradient.addColorStop(0, '#00000000');
+                    // Top of space
+                    gradient.addColorStop(0.25, '#00000000');
+                    // Upper atmosphere
+                    gradient.addColorStop(.5, "#4bc5ff22");
+                    // ground
+                    gradient.addColorStop(.9, "#4bc5ffff");
+                    gradient.addColorStop(.95, "#4bc5ff22");
+                    gradient.addColorStop(1, "#4bc5ff00");
+
+                    // Set the fill style and draw a rectangle
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(box[0], box[1], box[2], box[3]);
+                    return;
+                }
+            };
+            return obj;
+        }
+        // Atmosphere covers entire screen.
+        world.objects.push(createAtmosphere(0, 0, world.size[0], world.size[1]));
+
         var updatePhysicsSub = function(delta_ms) {
             var delta_s =  delta_ms / 1000.0;
 
