@@ -1032,7 +1032,7 @@
                 "bodyStyle" : { "fillStyle" : "#eee", "strokeStyle" : "#444"},
                 "accentStyle" : { "fillStyle" : "#e00", "strokeStyle" : "#000000ff"},
                 "cockpitStyle" : { "fillStyle" : "rgb(95, 199, 199, 100)", "strokeStyle" : "rgb(40, 100, 100)"},
-                "hatchOpen" : false,
+                "hatchOpenWidth" : 0,
                 "cracks" : [],
                 "draw": function(box) {
                     // console.log("drawing ship");
@@ -1083,12 +1083,8 @@
                     // Draw beams behind body
                     var beamStartPos = [box[0] + box[2]/2, box[1] + box[3]];
                     var beamHeight = box[3] * this.beamHeight;
-                    var maxBeamWidth = 0;
                     for (var i = 0; i < this.beams.length; i++) {
                         var beamWidth = this.beams[i].width * box[2] / 4;
-                        if (beamWidth > maxBeamWidth) {
-                            maxBeamWidth = beamWidth;
-                        }
                         // transparent green beam
                         ctx.fillStyle = this.beams[i].fillStyle;
                         ctx.beginPath();
@@ -1096,20 +1092,22 @@
                         ctx.fill();
                     }
 
-                    // Hatch
+                    // Hatch - may be open with no beam.
+                    var hatchOpenWidth = this.hatchOpenWidth * box[2] / 4;
                     ctx.fillStyle   = this.bodyStyle.fillStyle;
                     ctx.strokeStyle = this.bodyStyle.strokeStyle;
                     ctx.beginPath();
-                    ctx.rect(box[0] + 0.25 * box[2] - maxBeamWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
+                    ctx.rect(box[0] + 0.25 * box[2] - hatchOpenWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
                     ctx.fill();
                     ctx.stroke();
                     ctx.beginPath();
-                    ctx.rect(box[0] + 0.5 * box[2] + maxBeamWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
+                    ctx.rect(box[0] + 0.5 * box[2] + hatchOpenWidth, box[1] + .9 * box[3], .25 * box[2], 0.1 * box[3]);
                     ctx.fill();
                     ctx.stroke();
-                    if (maxBeamWidth > 0) {
+                    // Draw mini tractor beam
+                    if (hatchOpenWidth > 0 && this.health > 0) {
                         ctx.fillStyle = '#0000FFAA';
-                        ctx.fillRect(box[0] + 0.5 * box[2] - maxBeamWidth, box[1] + .9 * box[3], 2 * maxBeamWidth, 0.2 * box[3]);
+                        ctx.fillRect(box[0] + 0.5 * box[2] - hatchOpenWidth, box[1] + .9 * box[3], 2 * hatchOpenWidth, 0.2 * box[3]);
                     }
 
                     //body
@@ -1233,16 +1231,58 @@
                 },
                 "update" : function(delta_ms) {
 
-                    if (this.autopilot) {
-                        this.updateAI(delta_ms);
-                    }
-
-                    // Automatic health
-                    if (this.health < this.maxHealth) {
-                        this.health = this.health + this.healthRegenPerSecond * delta_ms / 1000;
-                        if (this.health > this.maxHealth) {
-                            this.health = this.maxHealth;
+                    if (this.health <= 0) {
+                        // Turn off all jets
+                        for (var i = 0; i < this.jets.length; i++) {
+                            this.jets[i] = 0;
                         }
+
+                        // turn off all beams
+                        if (this.beams.length > 0) {
+                            this.beams = [];
+                        }
+                    } else {
+
+                        if (this.health < this.maxHealth) {
+                            // Automatic health
+                            this.health = this.health + this.healthRegenPerSecond * delta_ms / 1000;
+                            if (this.health > this.maxHealth) {
+                                this.health = this.maxHealth;
+                            }
+                        }
+
+                        if (this.autopilot) {
+                            this.updateAI(delta_ms);
+                        }
+
+                        // Update tractor beams
+                        var maxBeamWidth = 0;
+                        var i = 0;
+                        while (i < this.beams.length) {
+                            var beam = this.beams[i];
+
+                            // Beams disappear over 1 second
+                            beam.age_ms = beam.age_ms + delta_ms;
+                            if (beam.age_ms > beam.maxAge_ms) {
+                                // Delete empty beams
+                                this.beams.splice(i, 1);
+                            } else {
+                                if (beam.age_ms < 0.5 * beam.maxAge_ms) {
+                                    // Beam growing to full size
+                                    beam.width = 2 * beam.age_ms / beam.maxAge_ms;
+                                } else {
+                                    // Beam shrinking
+                                    beam.width = 2 * (beam.maxAge_ms - beam.age_ms) / beam.maxAge_ms;
+                                }
+
+                                if (beam.width > maxBeamWidth) {
+                                    maxBeamWidth = beam.width;
+                                }
+
+                                i++;
+                            }
+                        }
+                        this.hatchOpenWidth = maxBeamWidth;
                     }
 
                     var numCracks = Math.floor(10 * (this.maxHealth - this.health) / this.maxHealth);
@@ -1295,29 +1335,6 @@
                         f[1] = f[1] + Math.sin(this.jetAngles[i]) * force;
                     }
 
-                    // Update tractor beams
-                    var i = 0;
-                    while (i < this.beams.length) {
-                        var beam = this.beams[i];
-
-                        // Beams disappear over 1 second
-                        beam.age_ms = beam.age_ms + delta_ms;
-                        if (beam.age_ms > beam.maxAge_ms) {
-                            // Delete empty beams
-                            this.beams.splice(i, 1);
-                        } else {
-                            if (beam.age_ms < 0.5 * beam.maxAge_ms) {
-                                // Beam growing to full size
-                                beam.width = 2 * beam.age_ms / beam.maxAge_ms;
-                            } else {
-                                // Beam shrinking
-                                beam.width = 2 * (beam.maxAge_ms - beam.age_ms) / beam.maxAge_ms;
-                            }
-                            i++;
-                        }
-                    }
-                    this.hatchOpen = (this.beams.length > 0);
-
                     // Try to pick up objects
                     var beamStartPos = [this.pos[0] + this.size[0] / 2, this.pos[1] + this.size[1]];
                     var beamHeight = this.size[1] * this.beamHeight;
@@ -1352,7 +1369,7 @@
                         }
                     }
 
-                    if (this.hatchOpen) {
+                    if (this.hatchOpenWidth > 0) {
                         // Look for objects to pick up
                         var pickupBox = [this.pos[0] + 0.25 * this.size[0],
                                          this.pos[1] + 0.9 * this.size[1],
@@ -1411,6 +1428,11 @@
                     return this.dropItem(createCow());
                 },
                 handleClick : function(x, y) {
+                    if (this.health <= 0) {
+                        // clicking does nothing to a dead ship
+                        return;
+                    }
+
                     if (   x > this.pos[0] && x < this.pos[0] + this.size[0]
                         && y > this.pos[1] && y < this.pos[1] + this.size[1]) {
                         // Clicked on ship, so turn on tractor beam
@@ -1448,6 +1470,11 @@
                     }
                 },
                 handleKeyDown : function(e) {
+                    if (this.health <= 0) {
+                        // clicking does nothing to a dead ship
+                        return;
+                    }
+
                     if (e.keyCode == 39 || e.keyCode == 68) {
                         // pushed right
                         this.jets[0] = 1;
@@ -1466,6 +1493,11 @@
                     return;
                 },
                 handleKeyUp : function(e) {
+                    if (this.health <= 0) {
+                        // clicking does nothing to a dead ship
+                        return;
+                    }
+
                     if (e.keyCode == 39 || e.keyCode == 68) {
                         // pushed right or d
                         this.jets[0] = 0;
