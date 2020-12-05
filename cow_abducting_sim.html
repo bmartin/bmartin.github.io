@@ -341,6 +341,17 @@
                     this.view[3] = canvas.width  / this.zoom;
                 }
 
+                // Sort objects by z depth, highest first
+                this.objects.sort(function(a, b) {
+                    if (!("z" in a)) {
+                        a.z = 0;
+                    }
+                    if (!("z" in b)) {
+                        b.z = 0;
+                    }
+                    return b.z - a.z;
+                });
+
                 for (var i = 0; i < this.objects.length; i++) {
                     var o = this.objects[i];
                     if (!("draw" in o)) {
@@ -510,6 +521,48 @@
 
         // Bottom 5% is collision box for ground. Ground is moderately bouncy
         world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
+
+        //
+        // Decorative foreground stuff
+        //
+        
+        // Add a fence that is mildly broken.
+        function createFence(x, y, w, h) {
+            var obj = {
+                pos   : [x, y],
+                size  : [w, h],
+                z     : -5,
+                slats : [],
+                draw  : function(box) {
+                    ctx.fillStyle = "#fff1c9";
+                    ctx.strokeStyle = "#d19d08";
+                    for (var i = 0; i < this.slats.length; i++) {
+                        ctx.fillRect(box[0], box[1] + this.slats[i] * box[3], box[2], .05 * box[3]);
+                    }
+                    ctx.fillRect(box[0], box[1], 0.1 * box[2], box[3]);
+                    ctx.strokeRect(box[0], box[1], 0.1 * box[2], box[3]);
+                    ctx.fillRect(  box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
+                    ctx.strokeRect(box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
+                    return;
+                }
+            };
+            if (Math.random() > .07) {
+                obj.slats.push(.1);
+            }
+            if (Math.random() > .07) {
+                obj.slats.push(.4);
+            }
+            if (Math.random() > .07) {
+                obj.slats.push(.7);
+            }
+            return obj;
+        }
+        var fenceSegments = Math.floor(world.size[0] / 2);
+        for (var i = 0; i < fenceSegments; i++) {
+            if (Math.random() > 0.1) {
+                world.objects.push(createFence(2 * i, 0.95 * world.size[1] - 0.25, 2, 1));
+            }
+        }
 
         function createAtmosphere(x, y, w, h) {
             var obj = {
