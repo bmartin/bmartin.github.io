@@ -472,6 +472,7 @@
             var starField = {
                 pos : [x, y],
                 "size" : [w, h],
+                z : Infinity,
                 "stars" : [],
                 "draw": function(box) {
                     ctx.fillStyle = "#000";
@@ -508,8 +509,9 @@
             var obj = {
                 pos   : [x, y],
                 size  : [w, h],
+                z     : 1000,
                 draw  : function(box) {
-                    ctx.fillStyle = "#0e0";
+                    ctx.fillStyle = "#336600";
                     ctx.fillRect(box[0], box[1], box[2], box[3]);
                     return;
                 }
@@ -564,10 +566,35 @@
             }
         }
 
+        function createSilo(x, z, w, h) {
+            var obj = {
+                pos   : [x, 0.95 * world.size[1] - h],
+                size  : [w, h],
+                z     : z,
+                draw  : function(box) {
+                    ctx.fillStyle = "#fff1c9";
+                    ctx.strokeStyle = "#d19d08";
+                    ctx.fillRect(box[0], box[1], box[2], box[3]);
+                    ctx.strokeRect(box[0], box[1], box[2], box[3]);
+                    return;
+                }
+            };
+            return obj;
+        }
+        var numSilos = Math.floor(world.size[0] / 40);
+        for (var i = 0; i < numSilos; i++) {
+            var width  = 6;
+            var height = 10;
+            world.objects.push(createSilo(Math.random() * world.size[0] - width / 2,
+                                          10 + Math.random() * 100,
+                                          width, height));
+        }
+
         function createAtmosphere(x, y, w, h) {
             var obj = {
                 pos   : [x, y],
                 size  : [w, h],
+                z : 1000,
                 draw  : function(box) {
                     // Create a linear gradient
                     // The start gradient point is at x=20, y=0
