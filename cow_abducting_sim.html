@@ -472,6 +472,7 @@
             var starField = {
                 pos : [x, y],
                 "size" : [w, h],
+                z : Infinity,
                 "stars" : [],
                 "draw": function(box) {
                     ctx.fillStyle = "#000";
@@ -508,6 +509,7 @@
             var obj = {
                 pos   : [x, y],
                 size  : [w, h],
+                z     : 1000,
                 draw  : function(box) {
                     ctx.fillStyle = "#0e0";
                     ctx.fillRect(box[0], box[1], box[2], box[3]);
@@ -568,6 +570,7 @@
             var obj = {
                 pos   : [x, y],
                 size  : [w, h],
+                z : 1000,
                 draw  : function(box) {
                     // Create a linear gradient
                     // The start gradient point is at x=20, y=0
