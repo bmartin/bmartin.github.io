@@ -572,10 +572,36 @@
                 size  : [w, h],
                 z     : z,
                 draw  : function(box) {
-                    ctx.fillStyle = "#fff1c9";
-                    ctx.strokeStyle = "#d19d08";
-                    ctx.fillRect(box[0], box[1], box[2], box[3]);
-                    ctx.strokeRect(box[0], box[1], box[2], box[3]);
+                    
+                    const topRadius = 0.5 * box[2];
+                    const xCenter = box[0] + 0.5 * box[2];
+                    
+                    // Top of Silo
+                    ctx.fillStyle = "#d3d3d3";
+                    ctx.strokeStyle = "#000000";
+                    ctx.beginPath();
+                    ctx.ellipse(xCenter, box[1] + topRadius, topRadius, topRadius, 0, Math.PI, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.closePath();
+                    
+                    // Body of silo
+                    ctx.fillStyle = "#de1826";
+                    ctx.strokeStyle = "#d3d3d3";
+                    ctx.fillRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
+                    ctx.strokeRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
+                    
+                    const layerHeightM = 1;
+                    const boxHeightM = this.size[1] - 0.5 * this.size[0];
+                    for (var heightM = layerHeightM; heightM < boxHeightM; heightM = heightM + layerHeightM) {
+                        var heightP = box[3] * heightM / this.size[1];
+                        var layerY = box[1] + box[3] - heightP;
+                        ctx.beginPath();
+                        ctx.moveTo(box[0], layerY);
+                        ctx.lineTo(box[0] + box[2], layerY);
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
                     return;
                 }
             };
@@ -583,7 +609,7 @@
         }
         var numSilos = Math.floor(world.size[0] / 40);
         for (var i = 0; i < numSilos; i++) {
-            var width  = 6;
+            var width  = 5;
             var height = 10;
             world.objects.push(createSilo(Math.random() * world.size[0] - width / 2,
                                           10 + Math.random() * 100,
@@ -1995,3 +2021,5 @@
 
 </body>
 </html>
+
+<!-- cspell:words regen -->
