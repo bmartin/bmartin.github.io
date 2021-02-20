@@ -1,8 +1,8 @@
-var canvas = document.getElementById("myCanvas");
+var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 
-ctx.canvas.width = innerWidth - 100;
-ctx.canvas.height = innerHeight * .9;
+ctx.canvas.width = innerWidth;
+ctx.canvas.height = innerHeight;
 
 
 // Game object system functions
