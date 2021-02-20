@@ -1875,3 +1875,5 @@ function draw(now_ms) {
 }
 
 draw(performance.now());
+
+// cspell:ignore regen
