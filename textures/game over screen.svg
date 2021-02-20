@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   sodipodi:docname="game over screen.svg">
+  <defs
+     id="defs2">
+    <rect
+       x="71.4375"
+       y="169.59792"
+       width="51.329167"
+       height="15.08125"
+       id="rect901" />
+    <rect
+       x="61.383333"
+       y="142.61042"
+       width="85.989583"
+       height="18.25625"
+       id="rect889" />
+    <rect
+       x="-12.85119"
+       y="48.758929"
+       width="114.52679"
+       height="12.473214"
+       id="rect26" />
+    <rect
+       x="-12.85119"
+       y="48.75893"
+       width="114.52679"
+       height="12.473214"
+       id="rect26-0" />
+    <rect
+       x="-12.85119"
+       y="48.75893"
+       width="114.52679"
+       height="12.473214"
+       id="rect1001" />
+    <rect
+       x="61.383331"
+       y="142.61041"
+       width="85.989586"
+       height="18.25625"
+       id="rect889-8" />
+    <rect
+       x="61.383331"
+       y="142.61041"
+       width="85.989586"
+       height="18.25625"
+       id="rect1004" />
+    <rect
+       x="71.4375"
+       y="169.59792"
+       width="51.329166"
+       height="15.08125"
+       id="rect901-3" />
+    <rect
+       x="71.4375"
+       y="169.59792"
+       width="51.329166"
+       height="15.08125"
+       id="rect1007" />
+    <rect
+       x="-12.85119"
+       y="48.75893"
+       width="114.52679"
+       height="12.473214"
+       id="rect26-0-2" />
+    <rect
+       x="-12.85119"
+       y="48.75893"
+       width="114.52679"
+       height="12.473214"
+       id="rect1082" />
+    <rect
+       x="61.383331"
+       y="142.61041"
+       width="85.989586"
+       height="18.25625"
+       id="rect889-8-7" />
+    <rect
+       x="61.383331"
+       y="142.61041"
+       width="85.989586"
+       height="18.25625"
+       id="rect1085" />
+    <rect
+       x="71.4375"
+       y="169.59792"
+       width="51.329166"
+       height="15.08125"
+       id="rect901-3-3" />
+    <rect
+       x="71.4375"
+       y="169.59792"
+       width="51.329166"
+       height="15.08125"
+       id="rect1088" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="219.30647"
+     inkscape:cy="432.44102"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:snap-global="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     showguides="true"
+     inkscape:guide-bbox="true" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="147.37291"
+       y="125.4125"
+       id="text897"><tspan
+         sodipodi:role="line"
+         id="tspan895"
+         x="147.37291"
+         y="125.4125"
+         style="stroke-width:0.264583" /></text>
+    <rect
+       style="opacity:1;fill:#4d4d4d;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.832706;stroke-linejoin:round;paint-order:markers stroke fill"
+       id="rect1105"
+       width="122.76938"
+       height="83.611046"
+       x="26.589268"
+       y="75.537186" />
+    <g
+       id="g986-0"
+       transform="matrix(0.56092362,0,0,0.61273887,23.863604,53.464965)">
+      <rect
+         style="fill:#999999;fill-opacity:0.67;fill-rule:evenodd;stroke:#000000;stroke-width:0.672776;stroke-linejoin:round;paint-order:markers stroke fill"
+         id="rect20-5"
+         width="164.82977"
+         height="37.390205"
+         x="29.756765"
+         y="57.616035" />
+      <text
+         xml:space="preserve"
+         id="text24-2"
+         style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect26-0-2);fill:#800000;fill-opacity:1;stroke:none;"
+         transform="matrix(2.8531739,0,0,4.3521976,65.021168,-170.0439)"><tspan
+           x="-12.851562"
+           y="58.415231"><tspan
+             style="fill:#800000;fill-opacity:1">game over</tspan></tspan></text>
+    </g>
+    <g
+       id="g976-6"
+       transform="matrix(0.63599443,0,0,0.88785762,14.504553,18.687453)">
+      <rect
+         style="fill:#cccccc;fill-opacity:0.67;fill-rule:evenodd;stroke:#000000;stroke-width:0.714399;stroke-linejoin:round;paint-order:markers stroke fill"
+         id="rect885-5"
+         width="56.477287"
+         height="12.556444"
+         x="77.035706"
+         y="110.56808" />
+      <text
+         xml:space="preserve"
+         id="text887-2"
+         style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect889-8-7);fill:#000000;fill-opacity:1;stroke:none;"
+         transform="matrix(1.5931697,0,0,1.6260409,-20.648545,-125.53256)"><tspan
+           x="61.382812"
+           y="152.26679"><tspan>restart</tspan></tspan></text>
+    </g>
+    <g
+       id="g981-1"
+       transform="matrix(0.68176861,0,0,0.92422642,8.2411527,20.216182)">
+      <rect
+         style="fill:#cccccc;fill-opacity:0.67;fill-rule:evenodd;stroke:#000000;stroke-width:0.655022;stroke-linejoin:round;paint-order:markers stroke fill"
+         id="rect893-8"
+         width="28.755394"
+         height="11.292895"
+         x="91.293518"
+         y="127.47174" />
+      <text
+         xml:space="preserve"
+         id="text899-2"
+         style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect901-3-3);fill:#000000;fill-opacity:1;stroke:none;"
+         transform="matrix(1.2361173,0,0,1.1070573,2.2768166,-62.369804)"><tspan
+           x="71.4375"
+           y="179.25312"><tspan>Quit</tspan></tspan></text>
+    </g>
+  </g>
+</svg>
