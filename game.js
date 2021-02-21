@@ -75,6 +75,358 @@ function createUIObjectButton (pos, size, iconObject) {
     return o;
 }
 
+function createStarField(x, y, w, h, numStars) {
+    var starField = {
+        pos : [x, y],
+        "size" : [w, h],
+        z : Infinity,
+        "stars" : [],
+        "draw": function(box) {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(box[0], box[1], box[2], box[3]);
+
+            // Star position obeys zoom, but size does not.
+            var zoom = box[2] / this.size[0];
+            for (var i = 0; i < this.stars.length; i++) {
+                var star = this.stars[i];
+                var screenX = star[0] * zoom + box[0];
+                var screenY = star[1] * zoom + box[1];
+                var screenR = star[2];
+                var visible = screenX + screenR > 0 && screenX - screenR < box[2] &&
+                              screenY + screenR > 0 && screenY - screenR < box[3];
+                if (visible) {
+                    ctx.beginPath();
+                    ctx.fillStyle = "#eee";
+                    ctx.arc(screenX, screenY, screenR, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+            return;
+        }
+    };
+    for (var i = 0; i < numStars; i++) {
+        starField.stars.push([w * Math.random(), h * Math.random(), 5 * Math.random()]);
+    }
+    return starField;
+}
+
+function createGroundBackground(x, y, w, h) {
+    var obj = {
+        pos   : [x, y],
+        size  : [w, h],
+        z     : 1000,
+        draw  : function(box) {
+            ctx.fillStyle = "#336600";
+            ctx.fillRect(box[0], box[1], box[2], box[3]);
+            return;
+        }
+    };
+    return obj;
+}
+
+// Add a fence that is mildly broken.
+function createFence(x, y, w, h) {
+    var obj = {
+        pos   : [x, y],
+        size  : [w, h],
+        z     : -5,
+        slats : [],
+        draw  : function(box) {
+            ctx.fillStyle = "#fff1c9";
+            ctx.strokeStyle = "#d19d08";
+            for (var i = 0; i < this.slats.length; i++) {
+                ctx.fillRect(box[0], box[1] + this.slats[i] * box[3], box[2], .05 * box[3]);
+            }
+            ctx.fillRect(box[0], box[1], 0.1 * box[2], box[3]);
+            ctx.strokeRect(box[0], box[1], 0.1 * box[2], box[3]);
+            ctx.fillRect(  box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
+            ctx.strokeRect(box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
+            return;
+        }
+    };
+    if (Math.random() > .07) {
+        obj.slats.push(.1);
+    }
+    if (Math.random() > .07) {
+        obj.slats.push(.4);
+    }
+    if (Math.random() > .07) {
+        obj.slats.push(.7);
+    }
+    return obj;
+}
+
+function createSilo(x, z, w, h) {
+    var obj = {
+        pos   : [x, 0.95 * world.size[1] - h],
+        size  : [w, h],
+        z     : z,
+        draw  : function(box) {
+            
+            const topRadius = 0.5 * box[2];
+            const xCenter = box[0] + 0.5 * box[2];
+            
+            // Top of Silo
+            ctx.fillStyle = "#d3d3d3";
+            ctx.strokeStyle = "#000000";
+            ctx.beginPath();
+            ctx.ellipse(xCenter, box[1] + topRadius, topRadius, topRadius, 0, Math.PI, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+            
+            // Body of silo
+            ctx.fillStyle = "#de1826";
+            ctx.strokeStyle = "#d3d3d3";
+            ctx.fillRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
+            ctx.strokeRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
+            
+            const layerHeightM = 1;
+            const boxHeightM = this.size[1] - 0.5 * this.size[0];
+            for (var heightM = layerHeightM; heightM < boxHeightM; heightM = heightM + layerHeightM) {
+                var heightP = box[3] * heightM / this.size[1];
+                var layerY = box[1] + box[3] - heightP;
+                ctx.beginPath();
+                ctx.moveTo(box[0], layerY);
+                ctx.lineTo(box[0] + box[2], layerY);
+                ctx.stroke();
+                ctx.closePath();
+            }
+            return;
+        }
+    };
+    return obj;
+}
+
+function createBarn(x, z, w, h, d) {
+    var barnObjects = [];
+    // Back wall
+    // Main body
+    var barnBack = {
+        pos   : [x, 0.95 * world.size[1] - h],
+        size  : [w, h],
+        z     : z + depth,
+        shape : [
+            [0.0, 0.2],
+            [0.1, 0.1],
+            [0.3, 0.0],
+            [0.7, 0.0],
+            [0.9, 0.1],
+            [1.0, 0.2],
+            [1.0, 1.0],
+            [0.0, 1.0]
+        ],
+        draw  : function(box) {
+            ctx.fillStyle = "#5C4033";
+            ctx.strokeStyle = "#000000";
+
+            ctx.beginPath();
+            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            for (var i = 1; i < this.shape.length; i++) {
+                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
+            }
+            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+            return;
+        }
+    };
+    barnObjects.push(barnBack);
+    var barnFront = {
+        pos   : [x, 0.95 * world.size[1] - h],
+        size  : [w, h],
+        z     : z,
+        shape : [
+            [0.0, 0.2],
+            [0.1, 0.1],
+            [0.3, 0.0],
+            [0.7, 0.0],
+            [0.9, 0.1],
+            [1.0, 0.2],
+            [1.0, 1.0],
+            [0.7, 1.0],
+            [0.7, 0.7],
+            [0.3, 0.7],
+            [0.3, 1.0],
+            [0.0, 1.0]
+        ],
+        draw  : function(box) {
+            ctx.fillStyle = "#ff0000";
+            ctx.strokeStyle = "#000000";
+
+            ctx.beginPath();
+            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            for (var i = 1; i < this.shape.length; i++) {
+                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
+            }
+            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+
+            const boards = Math.floor(1.5 * w);
+            for (var i = 1; i < boards; i++) {
+                const x = box[0] + (i / boards) * box[2];
+                const yTop = (x < box[0] + 0.1 * box[2]) ? (box[1] + 0.1 * box[3]) :
+                             (x < box[0] + 0.9 * box[2]) ? (box[1] + 0.0 * box[3]) :
+                                                           (box[1] + 0.1 * box[3]);
+                const yBot = (x < box[0] + 0.3 * box[2]) ? (box[1] + box[3]) :
+                             (x < box[0] + 0.7 * box[2]) ? (box[1] + 0.7 * box[3]) :
+                                                           (box[1] + box[3]);
+                ctx.beginPath();
+                ctx.moveTo(x, yTop);
+                ctx.lineTo(x, yBot);
+                ctx.stroke();
+            }
+
+            return;
+        }
+    };
+    barnObjects.push(barnFront);
+
+    var barnDoors = {
+        pos   : [x, 0.95 * world.size[1] - h],
+        size  : [w, h],
+        z     : z - 0.1,
+        open  : 0,
+        openSeconds : 5,
+        opening  : 1,
+        closing  : 0,
+        draw  : function(box) {
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#000000";
+
+            for (var i = 0; i < 2; i++) {
+                var x = box[0] + box[2] * ((i == 0 ? (0.3 - 0.2 * this.open) : (0.5 + 0.2 * this.open)));
+                var width =  0.2 * box[2];
+                var yTop  = box[1] + 0.7 * box[3];
+                var height = 0.3 * box[3];
+                ctx.beginPath();
+                ctx.moveTo(x, yTop);
+                ctx.lineTo(x + width, yTop);
+                ctx.lineTo(x + width, yTop + height);
+                ctx.lineTo(x, yTop + height);
+                ctx.lineTo(x, yTop);
+                ctx.moveTo(x + 0.2 * width, yTop + 0.1 * height);
+                ctx.lineTo(x + 0.5 * width, yTop + 0.4 * height);
+                ctx.lineTo(x + 0.9 * width, yTop + 0.1 * height);
+                ctx.lineTo(x + 0.2 * width, yTop + 0.1 * height);
+                // Bottom triangle
+                ctx.moveTo(x + 0.2 * width, yTop + 0.9 * height);
+                ctx.lineTo(x + 0.9 * width, yTop + 0.9 * height);
+                ctx.lineTo(x + 0.5 * width, yTop + 0.6 * height);
+                ctx.lineTo(x + 0.2 * width, yTop + 0.9 * height);
+
+                ctx.moveTo(x + 0.1 * width, yTop + 0.2 * height);
+                ctx.lineTo(x + 0.1 * width, yTop + 0.8 * height);
+                ctx.lineTo(x + 0.4 * width, yTop + 0.5 * height);
+                ctx.lineTo(x + 0.1 * width, yTop + 0.2 * height);
+
+                ctx.moveTo(x + 0.9 * width, yTop + 0.2 * height);
+                ctx.lineTo(x + 0.6 * width, yTop + 0.5 * height);
+                ctx.lineTo(x + 0.9 * width, yTop + 0.8 * height);
+                ctx.lineTo(x + 0.9 * width, yTop + 0.2 * height);
+
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            return;
+        },
+        "update" : function(delta_ms) {
+            if (this.opening) {
+                this.open = this.open + delta_ms / (1000 * this.openSeconds);
+                if (this.open > 1.0) {
+                    this.open = 1;
+                    this.opening = 0;
+                    // for demo
+                    this.closing = 1;
+                }
+            } else if (this.closing) {
+                this.open = this.open - delta_ms / (1000 * this.openSeconds);
+                if (this.open < 0.0) {
+                    this.open = 0;
+                    this.closing = 0;
+                    // for demo
+                    this.opening = 1;
+                }
+            }
+            return;
+        }
+    };
+    barnObjects.push(barnDoors);
+
+    var barnRoof = {
+        pos   : [x, 0.95 * world.size[1] - h],
+        size  : [w, h],
+        z     : z - 1,
+        shape : [
+            [-0.1, 0.3],
+            [ 0.1, 0.1],
+            [ 0.3, 0.0],
+            [ 0.7, 0.0],
+            [ 0.9, 0.1],
+            [ 1.1, 0.3],
+            [ 1.2, 0.2],
+            [ 0.9, 0.0],
+            [ 0.7,-0.1],
+            [ 0.3,-0.1],
+            [ 0.1, 0.0],
+            [-0.2, 0.2]
+        ],
+        draw  : function(box) {
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#000000";
+
+            ctx.beginPath();
+            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            for (var i = 1; i < this.shape.length; i++) {
+                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
+            }
+            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+            return;
+        }
+    };
+    barnObjects.push(barnRoof);
+    return barnObjects;
+}
+
+function createAtmosphere(x, y, w, h) {
+    var obj = {
+        pos   : [x, y],
+        size  : [w, h],
+        z : 1000,
+        draw  : function(box) {
+            // Create a linear gradient
+            // The start gradient point is at x=20, y=0
+            // The end gradient point is at x=220, y=0
+            var gradient = ctx.createLinearGradient(box[0], box[1], box[0], box[1] + box[3]);
+
+            // Add three color stops
+            gradient.addColorStop(0, '#00000000');
+            // Top of space
+            gradient.addColorStop(0.25, '#00000000');
+            // Upper atmosphere
+            gradient.addColorStop(.5, "#4bc5ff22");
+            // ground
+            gradient.addColorStop(.9, "#4bc5ffff");
+            gradient.addColorStop(.95, "#4bc5ff22");
+            gradient.addColorStop(1, "#4bc5ff00");
+
+            // Set the fill style and draw a rectangle
+            ctx.fillStyle = gradient;
+            ctx.fillRect(box[0], box[1], box[2], box[3]);
+            return;
+        }
+    };
+    return obj;
+}
+
 var w = 200;
 var h = 100;
 var world = {
@@ -326,56 +678,8 @@ world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0
 world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
 world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
 
-function createStarField(x, y, w, h, numStars) {
-    var starField = {
-        pos : [x, y],
-        "size" : [w, h],
-        z : Infinity,
-        "stars" : [],
-        "draw": function(box) {
-            ctx.fillStyle = "#000";
-            ctx.fillRect(box[0], box[1], box[2], box[3]);
-
-            // Star position obeys zoom, but size does not.
-            var zoom = box[2] / this.size[0];
-            for (var i = 0; i < this.stars.length; i++) {
-                var star = this.stars[i];
-                var screenX = star[0] * zoom + box[0];
-                var screenY = star[1] * zoom + box[1];
-                var screenR = star[2];
-                var visible = screenX + screenR > 0 && screenX - screenR < box[2] &&
-                              screenY + screenR > 0 && screenY - screenR < box[3];
-                if (visible) {
-                    ctx.beginPath();
-                    ctx.fillStyle = "#eee";
-                    ctx.arc(screenX, screenY, screenR, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.closePath();
-                }
-            }
-            return;
-        }
-    };
-    for (var i = 0; i < numStars; i++) {
-        starField.stars.push([w * Math.random(), h * Math.random(), 5 * Math.random()]);
-    }
-    return starField;
-}
 world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 100));
 
-function createGroundBackground(x, y, w, h) {
-    var obj = {
-        pos   : [x, y],
-        size  : [w, h],
-        z     : 1000,
-        draw  : function(box) {
-            ctx.fillStyle = "#336600";
-            ctx.fillRect(box[0], box[1], box[2], box[3]);
-            return;
-        }
-    };
-    return obj;
-}
 // Bottom 10% of world is ground
 world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
 
@@ -386,37 +690,6 @@ world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.
 // Decorative foreground stuff
 //
 
-// Add a fence that is mildly broken.
-function createFence(x, y, w, h) {
-    var obj = {
-        pos   : [x, y],
-        size  : [w, h],
-        z     : -5,
-        slats : [],
-        draw  : function(box) {
-            ctx.fillStyle = "#fff1c9";
-            ctx.strokeStyle = "#d19d08";
-            for (var i = 0; i < this.slats.length; i++) {
-                ctx.fillRect(box[0], box[1] + this.slats[i] * box[3], box[2], .05 * box[3]);
-            }
-            ctx.fillRect(box[0], box[1], 0.1 * box[2], box[3]);
-            ctx.strokeRect(box[0], box[1], 0.1 * box[2], box[3]);
-            ctx.fillRect(  box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
-            ctx.strokeRect(box[0] + 0.9 * box[2], box[1], 0.1 * box[2], box[3]);
-            return;
-        }
-    };
-    if (Math.random() > .07) {
-        obj.slats.push(.1);
-    }
-    if (Math.random() > .07) {
-        obj.slats.push(.4);
-    }
-    if (Math.random() > .07) {
-        obj.slats.push(.7);
-    }
-    return obj;
-}
 var fenceSegments = Math.floor(world.size[0] / 2);
 for (var i = 0; i < fenceSegments; i++) {
     if (Math.random() > 0.1) {
@@ -424,47 +697,6 @@ for (var i = 0; i < fenceSegments; i++) {
     }
 }
 
-function createSilo(x, z, w, h) {
-    var obj = {
-        pos   : [x, 0.95 * world.size[1] - h],
-        size  : [w, h],
-        z     : z,
-        draw  : function(box) {
-            
-            const topRadius = 0.5 * box[2];
-            const xCenter = box[0] + 0.5 * box[2];
-            
-            // Top of Silo
-            ctx.fillStyle = "#d3d3d3";
-            ctx.strokeStyle = "#000000";
-            ctx.beginPath();
-            ctx.ellipse(xCenter, box[1] + topRadius, topRadius, topRadius, 0, Math.PI, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-            
-            // Body of silo
-            ctx.fillStyle = "#de1826";
-            ctx.strokeStyle = "#d3d3d3";
-            ctx.fillRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
-            ctx.strokeRect(box[0], box[1] + topRadius, box[2], box[3] - topRadius);
-            
-            const layerHeightM = 1;
-            const boxHeightM = this.size[1] - 0.5 * this.size[0];
-            for (var heightM = layerHeightM; heightM < boxHeightM; heightM = heightM + layerHeightM) {
-                var heightP = box[3] * heightM / this.size[1];
-                var layerY = box[1] + box[3] - heightP;
-                ctx.beginPath();
-                ctx.moveTo(box[0], layerY);
-                ctx.lineTo(box[0] + box[2], layerY);
-                ctx.stroke();
-                ctx.closePath();
-            }
-            return;
-        }
-    };
-    return obj;
-}
 var numSilos = Math.floor(world.size[0] / 40);
 for (var i = 0; i < numSilos; i++) {
     var width  = 5;
@@ -474,202 +706,6 @@ for (var i = 0; i < numSilos; i++) {
                                   width, height));
 }
 
-function createBarn(x, z, w, h, d) {
-    var barnObjects = [];
-    // Back wall
-    // Main body
-    var barnBack = {
-        pos   : [x, 0.95 * world.size[1] - h],
-        size  : [w, h],
-        z     : z + depth,
-        shape : [
-            [0.0, 0.2],
-            [0.1, 0.1],
-            [0.3, 0.0],
-            [0.7, 0.0],
-            [0.9, 0.1],
-            [1.0, 0.2],
-            [1.0, 1.0],
-            [0.0, 1.0]
-        ],
-        draw  : function(box) {
-            ctx.fillStyle = "#5C4033";
-            ctx.strokeStyle = "#000000";
-
-            ctx.beginPath();
-            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            for (var i = 1; i < this.shape.length; i++) {
-                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
-            }
-            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-            return;
-        }
-    };
-    barnObjects.push(barnBack);
-    var barnFront = {
-        pos   : [x, 0.95 * world.size[1] - h],
-        size  : [w, h],
-        z     : z,
-        shape : [
-            [0.0, 0.2],
-            [0.1, 0.1],
-            [0.3, 0.0],
-            [0.7, 0.0],
-            [0.9, 0.1],
-            [1.0, 0.2],
-            [1.0, 1.0],
-            [0.7, 1.0],
-            [0.7, 0.7],
-            [0.3, 0.7],
-            [0.3, 1.0],
-            [0.0, 1.0]
-        ],
-        draw  : function(box) {
-            ctx.fillStyle = "#ff0000";
-            ctx.strokeStyle = "#000000";
-
-            ctx.beginPath();
-            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            for (var i = 1; i < this.shape.length; i++) {
-                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
-            }
-            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-
-            const boards = Math.floor(1.5 * w);
-            for (var i = 1; i < boards; i++) {
-                const x = box[0] + (i / boards) * box[2];
-                const yTop = (x < box[0] + 0.1 * box[2]) ? (box[1] + 0.1 * box[3]) :
-                             (x < box[0] + 0.9 * box[2]) ? (box[1] + 0.0 * box[3]) :
-                                                           (box[1] + 0.1 * box[3]);
-                const yBot = (x < box[0] + 0.3 * box[2]) ? (box[1] + box[3]) :
-                             (x < box[0] + 0.7 * box[2]) ? (box[1] + 0.7 * box[3]) :
-                                                           (box[1] + box[3]);
-                ctx.beginPath();
-                ctx.moveTo(x, yTop);
-                ctx.lineTo(x, yBot);
-                ctx.stroke();
-            }
-
-            return;
-        }
-    };
-    barnObjects.push(barnFront);
-
-    var barnDoors = {
-        pos   : [x, 0.95 * world.size[1] - h],
-        size  : [w, h],
-        z     : z - 0.1,
-        open  : 0,
-        openSeconds : 5,
-        opening  : 1,
-        closing  : 0,
-        draw  : function(box) {
-            ctx.fillStyle = "#ffffff";
-            ctx.strokeStyle = "#000000";
-
-            for (var i = 0; i < 2; i++) {
-                var x = box[0] + box[2] * ((i == 0 ? (0.3 - 0.2 * this.open) : (0.5 + 0.2 * this.open)));
-                var width =  0.2 * box[2];
-                var yTop  = box[1] + 0.7 * box[3];
-                var height = 0.3 * box[3];
-                ctx.beginPath();
-                ctx.moveTo(x, yTop);
-                ctx.lineTo(x + width, yTop);
-                ctx.lineTo(x + width, yTop + height);
-                ctx.lineTo(x, yTop + height);
-                ctx.lineTo(x, yTop);
-                ctx.moveTo(x + 0.2 * width, yTop + 0.1 * height);
-                ctx.lineTo(x + 0.5 * width, yTop + 0.4 * height);
-                ctx.lineTo(x + 0.9 * width, yTop + 0.1 * height);
-                ctx.lineTo(x + 0.2 * width, yTop + 0.1 * height);
-                // Bottom triangle
-                ctx.moveTo(x + 0.2 * width, yTop + 0.9 * height);
-                ctx.lineTo(x + 0.9 * width, yTop + 0.9 * height);
-                ctx.lineTo(x + 0.5 * width, yTop + 0.6 * height);
-                ctx.lineTo(x + 0.2 * width, yTop + 0.9 * height);
-
-                ctx.moveTo(x + 0.1 * width, yTop + 0.2 * height);
-                ctx.lineTo(x + 0.1 * width, yTop + 0.8 * height);
-                ctx.lineTo(x + 0.4 * width, yTop + 0.5 * height);
-                ctx.lineTo(x + 0.1 * width, yTop + 0.2 * height);
-
-                ctx.moveTo(x + 0.9 * width, yTop + 0.2 * height);
-                ctx.lineTo(x + 0.6 * width, yTop + 0.5 * height);
-                ctx.lineTo(x + 0.9 * width, yTop + 0.8 * height);
-                ctx.lineTo(x + 0.9 * width, yTop + 0.2 * height);
-
-                ctx.fill();
-                ctx.stroke();
-            }
-
-            return;
-        },
-        "update" : function(delta_ms) {
-            if (this.opening) {
-                this.open = this.open + delta_ms / (1000 * this.openSeconds);
-                if (this.open > 1.0) {
-                    this.open = 1;
-                    this.opening = 0;
-                    // for demo
-                    this.closing = 1;
-                }
-            } else if (this.closing) {
-                this.open = this.open - delta_ms / (1000 * this.openSeconds);
-                if (this.open < 0.0) {
-                    this.open = 0;
-                    this.closing = 0;
-                    // for demo
-                    this.opening = 1;
-                }
-            }
-            return;
-        }
-    };
-    barnObjects.push(barnDoors);
-
-    var barnRoof = {
-        pos   : [x, 0.95 * world.size[1] - h],
-        size  : [w, h],
-        z     : z - 1,
-        shape : [
-            [-0.1, 0.3],
-            [ 0.1, 0.1],
-            [ 0.3, 0.0],
-            [ 0.7, 0.0],
-            [ 0.9, 0.1],
-            [ 1.1, 0.3],
-            [ 1.2, 0.2],
-            [ 0.9, 0.0],
-            [ 0.7,-0.1],
-            [ 0.3,-0.1],
-            [ 0.1, 0.0],
-            [-0.2, 0.2]
-        ],
-        draw  : function(box) {
-            ctx.fillStyle = "#ffffff";
-            ctx.strokeStyle = "#000000";
-
-            ctx.beginPath();
-            ctx.moveTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            for (var i = 1; i < this.shape.length; i++) {
-                ctx.lineTo(box[0] + this.shape[i][0] * box[2], box[1] + this.shape[i][1] * box[3]);
-            }
-            ctx.lineTo(box[0] + this.shape[0][0] * box[2], box[1] + this.shape[0][1] * box[3]);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-            return;
-        }
-    };
-    barnObjects.push(barnRoof);
-    return barnObjects;
-}
 {
     var width  = 15;
     var height = 12;
@@ -678,36 +714,6 @@ function createBarn(x, z, w, h, d) {
                                   width, height, depth));
 }
 
-function createAtmosphere(x, y, w, h) {
-    var obj = {
-        pos   : [x, y],
-        size  : [w, h],
-        z : 1000,
-        draw  : function(box) {
-            // Create a linear gradient
-            // The start gradient point is at x=20, y=0
-            // The end gradient point is at x=220, y=0
-            var gradient = ctx.createLinearGradient(box[0], box[1], box[0], box[1] + box[3]);
-
-            // Add three color stops
-            gradient.addColorStop(0, '#00000000');
-            // Top of space
-            gradient.addColorStop(0.25, '#00000000');
-            // Upper atmosphere
-            gradient.addColorStop(.5, "#4bc5ff22");
-            // ground
-            gradient.addColorStop(.9, "#4bc5ffff");
-            gradient.addColorStop(.95, "#4bc5ff22");
-            gradient.addColorStop(1, "#4bc5ff00");
-
-            // Set the fill style and draw a rectangle
-            ctx.fillStyle = gradient;
-            ctx.fillRect(box[0], box[1], box[2], box[3]);
-            return;
-        }
-    };
-    return obj;
-}
 // Atmosphere covers entire screen.
 world.objects.push(createAtmosphere(0, 0, world.size[0], world.size[1]));
 
