@@ -157,7 +157,7 @@ function createFence(x, y, w, h) {
     return obj;
 }
 
-function createSilo(x, z, w, h) {
+function createSilo(x, z, w, h, world) {
     var obj = {
         pos   : [x, 0.95 * world.size[1] - h],
         size  : [w, h],
@@ -199,14 +199,14 @@ function createSilo(x, z, w, h) {
     return obj;
 }
 
-function createBarn(x, z, w, h, d) {
+function createBarn(x, y, z, w, h, d) {
     var barnObjects = [];
     // Back wall
     // Main body
     var barnBack = {
-        pos   : [x, 0.95 * world.size[1] - h],
+        pos   : [x, y],
         size  : [w, h],
-        z     : z + depth,
+        z     : z + d,
         shape : [
             [0.0, 0.2],
             [0.1, 0.1],
@@ -235,7 +235,7 @@ function createBarn(x, z, w, h, d) {
     };
     barnObjects.push(barnBack);
     var barnFront = {
-        pos   : [x, 0.95 * world.size[1] - h],
+        pos   : [x, y],
         size  : [w, h],
         z     : z,
         shape : [
@@ -287,7 +287,7 @@ function createBarn(x, z, w, h, d) {
     barnObjects.push(barnFront);
 
     var barnDoors = {
-        pos   : [x, 0.95 * world.size[1] - h],
+        pos   : [x, y],
         size  : [w, h],
         z     : z - 0.1,
         open  : 0,
@@ -335,7 +335,7 @@ function createBarn(x, z, w, h, d) {
 
             return;
         },
-        "update" : function(delta_ms) {
+        "update" : function(delta_ms, world) {
             if (this.opening) {
                 this.open = this.open + delta_ms / (1000 * this.openSeconds);
                 if (this.open > 1.0) {
@@ -359,7 +359,7 @@ function createBarn(x, z, w, h, d) {
     barnObjects.push(barnDoors);
 
     var barnRoof = {
-        pos   : [x, 0.95 * world.size[1] - h],
+        pos   : [x, y],
         size  : [w, h],
         z     : z - 1,
         shape : [
@@ -427,297 +427,7 @@ function createAtmosphere(x, y, w, h) {
     return obj;
 }
 
-var w = 200;
-var h = 100;
-var world = {
-    "size" : [w, h],
-    "objects" : [],
-    "uiObjects" : [],
-    // pixels / m
-    // Initial value is width of screen.
-    "zoom" : canvas.width / w,
-    "view" : [0, 0, w, h],
-    // in m/s
-    "g" : 9.8,
-    "focus" : null,
-    "drawBoundingBoxes" : false,
-    handleMouseMove : function(relativeX, relativeY) {
-        // Convert to world space
-        var x = relativeX / this.zoom + this.view[0];
-        var y = relativeY / this.zoom + this.view[1];
-
-        for (var i = 0; i < this.objects.length; i++) {
-            if (this.objects[i].handleMouseMove) {
-                this.objects[i].handleMouseMove(x, y);
-            }
-        }
-
-        return;
-    },
-    handleClick : function(relativeX, relativeY) {
-        // First see if we clicked on a ui element
-        for (var i = 0; i < this.uiObjects.length; i++) {
-            if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
-                if (this.uiObjects[i].inBox(relativeX, relativeY)) {
-                    this.uiObjects[i].handleClick(relativeX, relativeY);
-                    return;
-                }
-            }
-        }
-
-        // Now check game objects
-        var x = relativeX / this.zoom + this.view[0];
-        var y = relativeY / this.zoom + this.view[1];
-        for (var i = 0; i < this.objects.length; i++) {
-            if ("handleClick" in this.objects[i]) {
-                this.objects[i].handleClick(x, y);
-            }
-        }
-
-        return;
-    },
-    handleKeyDown : function(e) {
-        if(e.keyCode == 66) {
-            // pushed b
-            world.drawBoundingBoxes = true;
-        } else {
-            // Pass along to objects
-            for (var i = 0; i < this.objects.length; i++) {
-                if (this.objects[i].handleKeyDown) {
-                    this.objects[i].handleKeyDown(e);
-                }
-            }
-        }
-        return;
-    },
-    handleKeyUp : function(e) {
-        if(e.keyCode == 66) {
-            // pushed b
-            world.drawBoundingBoxes = false;
-        } else {
-            // Pass along to objects
-            for (var i = 0; i < this.objects.length; i++) {
-                if (this.objects[i].handleKeyUp) {
-                    this.objects[i].handleKeyUp(e);
-                }
-            }
-        }
-        return;
-    },
-    "draw": function() {
-        // console.log("drawing world");
-
-        // Update viewport to keep focus item in center 1/2 of screen if possible
-        if (this.focus) {
-            // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
-
-            this.zoom = 100 / this.focus.size[0];
-            //  *
-            //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
-            // if (this.zoom < 1) {
-            //     this.zoom = 1;
-            // } else if (this.zoom > 5) {
-            //     this.zoom = 5;
-            // }
-            this.view[2] = canvas.width  / this.zoom;
-            this.view[3] = canvas.height / this.zoom;
-
-            // Now center view. Desired state is for view and focus to have same center:
-            //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
-            // or
-            //   this.view[i] = focus.pos[i] + focus.size[i] / 2 - this.view[i+2]/2
-            //
-            // For stability, only correct if desired position is more than 1/4 of the screen away,
-            // and then, only as much as is needed to be that far.
-            for (var i = 0; i < 2; i++) {
-                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2]/2;
-                if (this.view[i] < desiredViewPos - this.view[i+2] / 4) {
-                    this.view[i] = desiredViewPos - this.view[i+2] / 4;
-                }
-                if (this.view[i] > desiredViewPos + this.view[i+2] / 4) {
-                    this.view[i] = desiredViewPos + this.view[i+2] / 4;
-                }
-                // Make sure view is legal
-                if (this.view[i] < 0) {
-                    this.view[i] = 0;
-                }
-                if (this.view[i] + this.view[i+2] > this.size[i]) {
-                    this.view[i] = this.size[i] - this.view[i+2];
-                }
-            }
-        } else {
-            this.zoom = canvas.width / this.size[0];
-            this.view[2] = canvas.height / this.zoom;
-            this.view[3] = canvas.width  / this.zoom;
-        }
-
-        // Sort objects by z depth, highest first
-        this.objects.sort(function(a, b) {
-            if (!("z" in a)) {
-                a.z = 0;
-            }
-            if (!("z" in b)) {
-                b.z = 0;
-            }
-            return b.z - a.z;
-        });
-
-        for (var i = 0; i < this.objects.length; i++) {
-            var o = this.objects[i];
-            if (!("draw" in o)) {
-                // Non-drawable object
-                continue;
-            }
-            if ("hidden" in o && o.hidden) {
-                continue;
-            }
-            if ("alpha" in o) {
-                if (o.alpha <= 0) {
-                    // invisible, don't draw
-                    continue;
-                } else {
-                    ctx.globalAlpha = o.alpha;
-                }
-            } else {
-                ctx.globalAlpha = 1;
-            }
-            if ('size' in o) {
-                var visible =
-                    (o.pos[0] + o.size[0] > this.view[0]) &&
-                    (o.pos[1] + o.size[1] > this.view[1]) &&
-                    (o.pos[0] < this.view[0] + this.view[2]) &&
-                    (o.pos[1] < this.view[1] + this.view[3]);
-                if (visible) {
-                    var zoom = this.zoom;
-                    var box = [zoom * (o.pos[0] - this.view[0]),
-                               zoom * (o.pos[1] - this.view[1]),
-                               zoom * o.size[0],
-                               zoom * o.size[1]];
-                    if (o.draw && !o.hidden) {
-                        o.draw(box);
-                    }
-                    if (this.drawBoundingBoxes && 'pos' in o && 'size' in o) {
-                        ctx.strokeStyle = "green";
-                        ctx.strokeRect(box[0], box[1], box[2], box[3]);
-                    }
-                }
-            } else {
-                // dimensionless object to draw
-                o.draw([0, 0, canvas.width, canvas.height]);
-            }
-        }
-
-        // Draw UI elements over the rest of the screen
-        for (var i = 0; i < this.uiObjects.length; i++) {
-            if (!this.uiObjects[i].hidden) {
-                this.uiObjects[i].draw();
-            }
-        }
-
-        return;
-    },
-    "update" : function(delta_ms) {
-        for (var i = 0; i < this.objects.length; i++) {
-            if ('update' in this.objects[i]) {
-                this.objects[i].update(delta_ms);
-            }
-        }
-        return;
-    },
-    "getObjectsInBox" : function (box) {
-        var result = [];
-        OBJECT:
-        for (var i = 0; i < this.objects.length; i++) {
-            var o = this.objects[i];
-            if (!("pos" in o) || !("size" in o)) {
-                continue OBJECT;
-            }
-            for (var dim = 0; dim < 2; dim++) {
-                if (o.pos[dim] + o.size[dim] < box[dim]) {
-                    continue OBJECT;
-                } else if (o.pos[dim] > box[dim] + box[dim+2]) {
-                    continue OBJECT;
-                }
-            }
-            // Not outside of box
-            result.push(o);
-        }
-        return result;
-    },
-    "removeObject" : function (o) {
-        var i = 0;
-        while (i < this.objects.length) {
-            if (this.objects[i] === o) {
-                this.objects.splice(i, 1);
-            } else {
-                i++;
-            }
-        }
-        return;
-    },
-    "addObjectOnGround" : function(o) {
-        o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
-        world.objects.push(o);
-    },
-    "startGame" : function() {
-        // Create cows
-        for (var i = 0; i < 10; i++) {
-            this.addObjectOnGround(createCow());
-        }
-        for (var i = 0; i < 5; i++) {
-            this.addObjectOnGround(createHayBale());
-        }
-        this.objects.push(createCowGenerator());
-        return;
-    }
-};
-
-// Add bounding box around world to keep physics objects in.
-world.objects.push(createInvisibleBoundingBox([-1,            -1], [world.size[0] + 2, 2], 1));
-world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0] + 2, 2], 1));
-world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
-world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
-
-world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 100));
-
-// Bottom 10% of world is ground
-world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
-
-// Bottom 5% is collision box for ground. Ground is moderately bouncy
-world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
-
-//
-// Decorative foreground stuff
-//
-
-var fenceSegments = Math.floor(world.size[0] / 2);
-for (var i = 0; i < fenceSegments; i++) {
-    if (Math.random() > 0.1) {
-        world.objects.push(createFence(2 * i, 0.95 * world.size[1] - 0.25, 2, 1));
-    }
-}
-
-var numSilos = Math.floor(world.size[0] / 40);
-for (var i = 0; i < numSilos; i++) {
-    var width  = 5;
-    var height = 10;
-    world.objects.push(createSilo(Math.random() * world.size[0] - width / 2,
-                                  10 + Math.random() * 100,
-                                  width, height));
-}
-
-{
-    var width  = 15;
-    var height = 12;
-    var depth  = 10;
-    world.objects.push(...createBarn(Math.random() * world.size[0] - width / 2, 5,
-                                  width, height, depth));
-}
-
-// Atmosphere covers entire screen.
-world.objects.push(createAtmosphere(0, 0, world.size[0], world.size[1]));
-
-var updatePhysicsSub = function(delta_ms) {
+var updatePhysicsSub = function(delta_ms, world) {
     var delta_s =  delta_ms / 1000.0;
 
     // Update speed (subject to collision)
@@ -867,6 +577,302 @@ var updatePhysicsSub = function(delta_ms) {
     return;
 };
 
+var w = 200;
+var h = 100;
+
+var starterWorld = {
+    "size" : [w, h],
+    "objects" : [],
+    "uiObjects" : [],
+    // pixels / m
+    // Initial value is width of screen.
+    "zoom" : canvas.width / w,
+    "view" : [0, 0, w, h],
+    // in m/s
+    "g" : 9.8,
+    "focus" : null,
+    "drawBoundingBoxes" : false,
+    handleMouseMove : function(relativeX, relativeY) {
+        // Convert to world space
+        var x = relativeX / this.zoom + this.view[0];
+        var y = relativeY / this.zoom + this.view[1];
+
+        for (var i = 0; i < this.objects.length; i++) {
+            if (this.objects[i].handleMouseMove) {
+                this.objects[i].handleMouseMove(x, y);
+            }
+        }
+
+        return;
+    },
+    handleClick : function(relativeX, relativeY) {
+        // First see if we clicked on a ui element
+        for (var i = 0; i < this.uiObjects.length; i++) {
+            if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
+                if (this.uiObjects[i].inBox(relativeX, relativeY)) {
+                    this.uiObjects[i].handleClick(relativeX, relativeY, this);
+                    return;
+                }
+            }
+        }
+
+        // Now check game objects
+        var x = relativeX / this.zoom + this.view[0];
+        var y = relativeY / this.zoom + this.view[1];
+        for (var i = 0; i < this.objects.length; i++) {
+            if ("handleClick" in this.objects[i]) {
+                this.objects[i].handleClick(x, y, this);
+            }
+        }
+
+        return;
+    },
+    handleKeyDown : function(e) {
+        if(e.keyCode == 66) {
+            // pushed b
+            this.drawBoundingBoxes = true;
+        } else {
+            // Pass along to objects
+            for (var i = 0; i < this.objects.length; i++) {
+                if (this.objects[i].handleKeyDown) {
+                    this.objects[i].handleKeyDown(e, this);
+                }
+            }
+        }
+        return;
+    },
+    handleKeyUp : function(e) {
+        if(e.keyCode == 66) {
+            // pushed b
+            this.drawBoundingBoxes = false;
+        } else {
+            // Pass along to objects
+            for (var i = 0; i < this.objects.length; i++) {
+                if (this.objects[i].handleKeyUp) {
+                    this.objects[i].handleKeyUp(e, this);
+                }
+            }
+        }
+        return;
+    },
+    "draw": function() {
+        // console.log("drawing world");
+
+        // Update viewport to keep focus item in center 1/2 of screen if possible
+        if (this.focus) {
+            // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
+
+            this.zoom = 100 / this.focus.size[0];
+            //  *
+            //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
+            // if (this.zoom < 1) {
+            //     this.zoom = 1;
+            // } else if (this.zoom > 5) {
+            //     this.zoom = 5;
+            // }
+            this.view[2] = canvas.width  / this.zoom;
+            this.view[3] = canvas.height / this.zoom;
+
+            // Now center view. Desired state is for view and focus to have same center:
+            //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
+            // or
+            //   this.view[i] = focus.pos[i] + focus.size[i] / 2 - this.view[i+2]/2
+            //
+            // For stability, only correct if desired position is more than 1/4 of the screen away,
+            // and then, only as much as is needed to be that far.
+            for (var i = 0; i < 2; i++) {
+                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2]/2;
+                if (this.view[i] < desiredViewPos - this.view[i+2] / 4) {
+                    this.view[i] = desiredViewPos - this.view[i+2] / 4;
+                }
+                if (this.view[i] > desiredViewPos + this.view[i+2] / 4) {
+                    this.view[i] = desiredViewPos + this.view[i+2] / 4;
+                }
+                // Make sure view is legal
+                if (this.view[i] < 0) {
+                    this.view[i] = 0;
+                }
+                if (this.view[i] + this.view[i+2] > this.size[i]) {
+                    this.view[i] = this.size[i] - this.view[i+2];
+                }
+            }
+        } else {
+            this.zoom = canvas.width / this.size[0];
+            this.view[2] = canvas.height / this.zoom;
+            this.view[3] = canvas.width  / this.zoom;
+        }
+
+        // Sort objects by z depth, highest first
+        this.objects.sort(function(a, b) {
+            if (!("z" in a)) {
+                a.z = 0;
+            }
+            if (!("z" in b)) {
+                b.z = 0;
+            }
+            return b.z - a.z;
+        });
+
+        for (var i = 0; i < this.objects.length; i++) {
+            var o = this.objects[i];
+            if (!("draw" in o)) {
+                // Non-drawable object
+                continue;
+            }
+            if ("hidden" in o && o.hidden) {
+                continue;
+            }
+            if ("alpha" in o) {
+                if (o.alpha <= 0) {
+                    // invisible, don't draw
+                    continue;
+                } else {
+                    ctx.globalAlpha = o.alpha;
+                }
+            } else {
+                ctx.globalAlpha = 1;
+            }
+            if ('size' in o) {
+                var visible =
+                    (o.pos[0] + o.size[0] > this.view[0]) &&
+                    (o.pos[1] + o.size[1] > this.view[1]) &&
+                    (o.pos[0] < this.view[0] + this.view[2]) &&
+                    (o.pos[1] < this.view[1] + this.view[3]);
+                if (visible) {
+                    var zoom = this.zoom;
+                    var box = [zoom * (o.pos[0] - this.view[0]),
+                               zoom * (o.pos[1] - this.view[1]),
+                               zoom * o.size[0],
+                               zoom * o.size[1]];
+                    if (o.draw && !o.hidden) {
+                        o.draw(box);
+                    }
+                    if (this.drawBoundingBoxes && 'pos' in o && 'size' in o) {
+                        ctx.strokeStyle = "green";
+                        ctx.strokeRect(box[0], box[1], box[2], box[3]);
+                    }
+                }
+            } else {
+                // dimensionless object to draw
+                o.draw([0, 0, canvas.width, canvas.height]);
+            }
+        }
+
+        // Draw UI elements over the rest of the screen
+        for (var i = 0; i < this.uiObjects.length; i++) {
+            if (!this.uiObjects[i].hidden) {
+                this.uiObjects[i].draw();
+            }
+        }
+
+        return;
+    },
+    "update" : function(delta_ms) {
+        for (var i = 0; i < this.objects.length; i++) {
+            if ('update' in this.objects[i]) {
+                this.objects[i].update(delta_ms, this);
+            }
+        }
+        return;
+    },
+    "getObjectsInBox" : function (box) {
+        var result = [];
+        OBJECT:
+        for (var i = 0; i < this.objects.length; i++) {
+            var o = this.objects[i];
+            if (!("pos" in o) || !("size" in o)) {
+                continue OBJECT;
+            }
+            for (var dim = 0; dim < 2; dim++) {
+                if (o.pos[dim] + o.size[dim] < box[dim]) {
+                    continue OBJECT;
+                } else if (o.pos[dim] > box[dim] + box[dim+2]) {
+                    continue OBJECT;
+                }
+            }
+            // Not outside of box
+            result.push(o);
+        }
+        return result;
+    },
+    "removeObject" : function (o) {
+        var i = 0;
+        while (i < this.objects.length) {
+            if (this.objects[i] === o) {
+                this.objects.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
+        return;
+    },
+    "addObjectOnGround" : function(o) {
+        o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
+        this.objects.push(o);
+    },
+    "startGame" : function() {
+        // Create cows
+        for (var i = 0; i < 10; i++) {
+            this.addObjectOnGround(createCow());
+        }
+        for (var i = 0; i < 5; i++) {
+            this.addObjectOnGround(createHayBale());
+        }
+        this.objects.push(createCowGenerator());
+        return;
+    }
+};
+
+function initializeStartWorld (world) {
+    // Add bounding box around world to keep physics objects in.
+    world.objects.push(createInvisibleBoundingBox([-1,            -1], [world.size[0] + 2, 2], 1));
+    world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0] + 2, 2], 1));
+    world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
+    world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
+    
+    world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 100));
+    
+    // Bottom 10% of world is ground
+    world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
+    
+    // Bottom 5% is collision box for ground. Ground is moderately bouncy
+    world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
+
+    //
+    // Decorative foreground stuff
+    //
+    
+    var fenceSegments = Math.floor(world.size[0] / 2);
+    for (var i = 0; i < fenceSegments; i++) {
+        if (Math.random() > 0.1) {
+            world.objects.push(createFence(2 * i, 0.95 * world.size[1] - 0.25, 2, 1));
+        }
+    }
+    
+    var numSilos = Math.floor(world.size[0] / 40);
+    for (var i = 0; i < numSilos; i++) {
+        var width  = 5;
+        var height = 10;
+        world.objects.push(createSilo(Math.random() * world.size[0] - width / 2,
+                                      10 + Math.random() * 100,
+                                      width, height, world));
+    }
+    
+    {
+        var width  = 15;
+        var height = 12;
+        var depth  = 10;
+        world.objects.push(...createBarn(
+            Math.random() * world.size[0] - width / 2, 0.95 * world.size[1] - height, 5,
+            width, height, depth));
+    }
+    
+    // Atmosphere covers entire screen.
+    world.objects.push(createAtmosphere(0, 0, world.size[0], world.size[1]));
+}
+
+initializeStartWorld(starterWorld);
+
 function drawHayBale (box) {
     var x = box[0];
     var y = box[1];
@@ -938,7 +944,7 @@ function createPhysicsObject (startPos, size, mass_kg, bounce_rho) {
         "mass_kg" : mass_kg,
         "bounce_rho" : bounce_rho,
         "updatePhysics" : updatePhysicsSub,
-        "update" : function(delta_ms) {
+        "update" : function(delta_ms, world) {
 
             // Adjust acceleration based on input forces
             var f = [0, 0];
@@ -960,7 +966,7 @@ function createPhysicsObject (startPos, size, mass_kg, bounce_rho) {
             this.a[1] = f[1] / this.mass_kg;
 
             // Move based on acceleration
-            this.updatePhysics(delta_ms);
+            this.updatePhysics(delta_ms, world);
         }
     };
     return o;
@@ -1031,7 +1037,7 @@ function addAnimalRole (o) {
     o.size = [1.5 * result[1], result[1]];
 
     var updateFcn = o.update;
-    o.update = function (delta_ms) {
+    o.update = function (delta_ms, world) {
         this.age_s = this.age_s + delta_ms / 1000 * this.growthRate;
 
         // die of old age
@@ -1074,9 +1080,9 @@ function addAnimalRole (o) {
         this.a[0] = f[0] / this.mass_kg;
         this.a[1] = f[1] / this.mass_kg;
 
-        updateFcn.call(this, delta_ms);
+        updateFcn.call(this, delta_ms, world);
         // Move based on acceleration
-        this.updatePhysics(delta_ms);
+        this.updatePhysics(delta_ms, world);
         return;
     };
 
@@ -1106,11 +1112,11 @@ function createCow () {
         return;
     };
     var oldUpdate = o.update;
-    o.update = function (delta_ms) {
+    o.update = function (delta_ms, world) {
         // Handle AI here
 
         // Call previous update
-        return oldUpdate.call(this, delta_ms);
+        return oldUpdate.call(this, delta_ms, world);
     };
 
     o.health = 25;
@@ -1352,7 +1358,7 @@ function createShip (width_m, startPos) {
             }
         },
         "updatePhysics" : updatePhysicsSub,
-        "updateAI" : function(delta_ms) {
+        "updateAI" : function(delta_ms, world) {
             var xCenter = this.pos[0] + this.size[0] / 2;
             var yCenter = this.pos[1] + this.size[1] / 2;
 
@@ -1403,7 +1409,7 @@ function createShip (width_m, startPos) {
             }
             return;
         },
-        "update" : function(delta_ms) {
+        "update" : function(delta_ms, world) {
 
             if (this.health <= 0) {
                 // Turn off all jets
@@ -1426,7 +1432,7 @@ function createShip (width_m, startPos) {
                 }
 
                 if (this.autopilot) {
-                    this.updateAI(delta_ms);
+                    this.updateAI(delta_ms, world);
                 }
 
                 // Update tractor beams
@@ -1571,7 +1577,7 @@ function createShip (width_m, startPos) {
             this.a[0] = f[0] / this.mass_kg;
             this.a[1] = f[1] / this.mass_kg;
 
-            this.updatePhysics(delta_ms);
+            this.updatePhysics(delta_ms, world);
 
             return;
         },
@@ -1587,7 +1593,7 @@ function createShip (width_m, startPos) {
             });
             return;
         },
-        dropItem : function (item) {
+        dropItem : function (item, world) {
             // Item starts inside ship. This avoids possible bounding box problem
             item.pos = [this.pos[0] + this.size[0] / 2 - item.size[0] / 2,
                         this.pos[1] + this.size[1] - item.size[1]];
@@ -1595,13 +1601,13 @@ function createShip (width_m, startPos) {
             world.objects.push(item);
             return;
         },
-        addHayBale : function () {
-            return this.dropItem(createHayBale());
+        addHayBale : function (world) {
+            return this.dropItem(createHayBale(), world);
         },
-        addCow : function () {
-            return this.dropItem(createCow());
+        addCow : function (world) {
+            return this.dropItem(createCow(), world);
         },
-        handleClick : function(x, y) {
+        handleClick : function(x, y, world) {
             if (this.health <= 0) {
                 // clicking does nothing to a dead ship
                 return;
@@ -1643,7 +1649,7 @@ function createShip (width_m, startPos) {
                 this.autopilot = false;
             }
         },
-        handleKeyDown : function(e) {
+        handleKeyDown : function(e, world) {
             if (this.health <= 0) {
                 // clicking does nothing to a dead ship
                 return;
@@ -1666,7 +1672,7 @@ function createShip (width_m, startPos) {
             }
             return;
         },
-        handleKeyUp : function(e) {
+        handleKeyUp : function(e, world) {
             if (this.health <= 0) {
                 // clicking does nothing to a dead ship
                 return;
@@ -1686,14 +1692,14 @@ function createShip (width_m, startPos) {
                 if (this.inventory.length > 0) {
                     var o = this.inventory.pop();
                     this.mass_kg = this.mass_kg - o.mass_kg;
-                    this.dropItem(o);
+                    this.dropItem(o, world);
                 }
             } else if(e.keyCode == 49) {
                 // 1 -> drop a hay bale
-                this.addHayBale();
+                this.addHayBale(world);
             } else if(e.keyCode == 50) {
                 // 1 -> drop a cow
-                this.addCow();
+                this.addCow(world);
             } else if(e.keyCode == 83 || e.keyCode == 40) {
                 this.addBeam();
             }
@@ -1709,7 +1715,7 @@ function createCowGenerator () {
     var cowGenerator = {
         countdown_ms : 0,
         interval_s : 30,
-        update : function(delta_ms) {
+        update : function(delta_ms, world) {
             this.countdown_ms = this.countdown_ms - delta_ms;
             if (this.countdown_ms <= 0) {
                 world.addObjectOnGround(createCow());
@@ -1723,25 +1729,25 @@ function createCowGenerator () {
 
 var hayBaleIcon = createHayBale();
 var hayBaleButton = createUIObjectButton([canvas.width / 2, canvas.height - 40], [30, 30], hayBaleIcon);
-hayBaleButton.handleClick = function (x, y) {
+hayBaleButton.handleClick = function (x, y, world) {
     if (world.focus != null) {
-        world.focus.addHayBale();
+        world.focus.addHayBale(world);
     }
 };
 hayBaleButton.hidden = true;
 gameHudButtons.push(hayBaleButton);
-world.uiObjects.push(hayBaleButton);
+starterWorld.uiObjects.push(hayBaleButton);
 
 var cowIcon = createCow();
 var cowButton = createUIObjectButton([canvas.width / 2 + 50, canvas.height - 40], [30, 30], cowIcon);
-cowButton.handleClick = function (x, y) {
+cowButton.handleClick = function (x, y, world) {
     if (world.focus != null) {
-        world.focus.addCow();
+        world.focus.addCow(world);
     }
 };
 cowButton.hidden = true;
 gameHudButtons.push(cowButton);
-world.uiObjects.push(cowButton);
+starterWorld.uiObjects.push(cowButton);
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
@@ -1752,11 +1758,11 @@ var paused = false;
 var last_now_ms = performance.now();
 
 var pauseButton = createUITextButton ([canvas.width - 40, 10], [30, 30], '⏸');
-pauseButton.handleClick = function (x, y) {
+pauseButton.handleClick = function (x, y, world) {
     startPause();
 };
 pauseButton.hidden = true;
-world.uiObjects.push(pauseButton);
+starterWorld.uiObjects.push(pauseButton);
 gameHudButtons.push(pauseButton);
 
 var pauseScreen = createUIObject([0, 0], [canvas.width, canvas.height]);
@@ -1777,7 +1783,7 @@ pauseScreen.handleClick = function (x, y) {
     this.hidden = true;
 };
 pauseScreen.hidden = true;
-world.uiObjects.push(pauseScreen);
+starterWorld.uiObjects.push(pauseScreen);
 
 var splashScreen = createUIObject([0, 0], [canvas.width, canvas.height]);
 splashScreen.draw = function(view) {
@@ -1796,7 +1802,7 @@ splashScreen.draw = function(view) {
     ctx.fillText("Click to Start", canvas.width/2, canvas.height * .75);
     return;
 };
-splashScreen.handleClick = function(x, y) {
+splashScreen.handleClick = function(x, y, world) {
     this.hidden = true;
 
     // Initial ship is 5m in center of world
@@ -1810,7 +1816,7 @@ splashScreen.handleClick = function(x, y) {
     world.startGame();
     return;
 };
-world.uiObjects.push(splashScreen);
+starterWorld.uiObjects.push(splashScreen);
 
 function startPause () {
     paused = true;
@@ -1822,6 +1828,8 @@ function endPause () {
     last_now_ms = performance.now();
 }
 
+var activeWorld = starterWorld;
+
 function keyDownHandler(e) {
     // Suppress default for space and arrow keys
     if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
@@ -1829,7 +1837,7 @@ function keyDownHandler(e) {
     }
 
     if (!paused) {
-        world.handleKeyDown(e);
+        activeWorld.handleKeyDown(e);
     }
 }
 function keyUpHandler(e) {
@@ -1841,7 +1849,7 @@ function keyUpHandler(e) {
         }
     } else {
         if (!paused) {
-            world.handleKeyUp(e);
+            activeWorld.handleKeyUp(e);
         }
     }
 }
@@ -1849,7 +1857,7 @@ function mouseMoveHandler(e) {
     var relativeX = e.clientX - canvas.offsetLeft;
     var relativeY = e.clientY - canvas.offsetTop;
 
-    world.handleMouseMove(relativeX, relativeY);
+    activeWorld.handleMouseMove(relativeX, relativeY);
 }
 function clickHandler(e) {
     if (paused) {
@@ -1858,7 +1866,7 @@ function clickHandler(e) {
         var relativeX = e.clientX - canvas.offsetLeft;
         var relativeY = e.clientY - canvas.offsetTop;
 
-        world.handleClick(relativeX, relativeY);
+        activeWorld.handleClick(relativeX, relativeY);
     }
 }
 
@@ -1868,14 +1876,14 @@ function draw(now_ms) {
             // At lease a second passed. Probably tab was in background.
             startPause();
         } else {
-            world.update(now_ms - last_now_ms);
+            activeWorld.update(now_ms - last_now_ms);
             last_now_ms = now_ms;
         }
     }
 
     // Draw even if paused
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    world.draw();
+    activeWorld.draw();
 
     requestAnimationFrame(draw);
 }
