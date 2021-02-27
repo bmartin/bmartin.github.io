@@ -879,6 +879,8 @@ function drawHayBale (box) {
     var w = box[2];
     var h = box[3];
 
+    ctx.strokeStyle = "rgb(185, 130, 0)";
+
     // front
     ctx.fillStyle = "rgb(255, 186, 20)";
     ctx.beginPath();
@@ -905,7 +907,6 @@ function drawHayBale (box) {
 
     // left side
     ctx.fillStyle = "rgb(255, 210, 5)";
-    ctx.strokeStyle = "rgb(185, 130, 0)";
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + .2 * w, y + 0.2 * h);
