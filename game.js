@@ -577,307 +577,6 @@ var updatePhysicsSub = function(delta_ms, world) {
     return;
 };
 
-var w = 200;
-var h = 100;
-
-var starterWorld = {
-    "size" : [w, h],
-    "objects" : [],
-    "uiObjects" : [],
-    // pixels / m
-    // Initial value is width of screen.
-    "zoom" : canvas.width / w,
-    "view" : [0, 0, w, h],
-    // in m/s
-    "g" : 9.8,
-    "focus" : null,
-    "drawBoundingBoxes" : false,
-    handleMouseMove : function(relativeX, relativeY) {
-        // Convert to world space
-        var x = relativeX / this.zoom + this.view[0];
-        var y = relativeY / this.zoom + this.view[1];
-
-        for (var i = 0; i < this.objects.length; i++) {
-            if (this.objects[i].handleMouseMove) {
-                this.objects[i].handleMouseMove(x, y);
-            }
-        }
-
-        return;
-    },
-    handleClick: function(relativeX, relativeY) {
-        // First see if we clicked on a ui element
-        for (var i = 0; i < this.uiObjects.length; i++) {
-            if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
-                if (this.uiObjects[i].inBox(relativeX, relativeY)) {
-                    this.uiObjects[i].handleClick(relativeX, relativeY, this);
-                    return;
-                }
-            }
-        }
-
-        // Now check game objects
-        var x = relativeX / this.zoom + this.view[0];
-        var y = relativeY / this.zoom + this.view[1];
-        for (var i = 0; i < this.objects.length; i++) {
-            if ("handleClick" in this.objects[i]) {
-                this.objects[i].handleClick(x, y, this);
-            }
-        }
-
-        return;
-    },
-    handleKeyDown : function(e) {
-        if(e.keyCode == 66) {
-            // pushed b
-            this.drawBoundingBoxes = true;
-        } else {
-            // Pass along to objects
-            for (var i = 0; i < this.objects.length; i++) {
-                if (this.objects[i].handleKeyDown) {
-                    this.objects[i].handleKeyDown(e, this);
-                }
-            }
-        }
-        return;
-    },
-    handleKeyUp : function(e) {
-        if(e.keyCode == 66) {
-            // pushed b
-            this.drawBoundingBoxes = false;
-        } else {
-            // Pass along to objects
-            for (var i = 0; i < this.objects.length; i++) {
-                if (this.objects[i].handleKeyUp) {
-                    this.objects[i].handleKeyUp(e, this);
-                }
-            }
-        }
-        return;
-    },
-    "draw": function() {
-        // console.log("drawing world");
-
-        // Update viewport to keep focus item in center 1/2 of screen if possible
-        if (this.focus) {
-            // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
-
-            this.zoom = 100 / this.focus.size[0];
-            //  *
-            //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
-            // if (this.zoom < 1) {
-            //     this.zoom = 1;
-            // } else if (this.zoom > 5) {
-            //     this.zoom = 5;
-            // }
-            this.view[2] = canvas.width  / this.zoom;
-            this.view[3] = canvas.height / this.zoom;
-
-            // Now center view. Desired state is for view and focus to have same center:
-            //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
-            // or
-            //   this.view[i] = focus.pos[i] + focus.size[i] / 2 - this.view[i+2]/2
-            //
-            // For stability, only correct if desired position is more than 1/4 of the screen away,
-            // and then, only as much as is needed to be that far.
-            for (var i = 0; i < 2; i++) {
-                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2]/2;
-                if (this.view[i] < desiredViewPos - this.view[i+2] / 4) {
-                    this.view[i] = desiredViewPos - this.view[i+2] / 4;
-                }
-                if (this.view[i] > desiredViewPos + this.view[i+2] / 4) {
-                    this.view[i] = desiredViewPos + this.view[i+2] / 4;
-                }
-                // Make sure view is legal
-                if (this.view[i] < 0) {
-                    this.view[i] = 0;
-                }
-                if (this.view[i] + this.view[i+2] > this.size[i]) {
-                    this.view[i] = this.size[i] - this.view[i+2];
-                }
-            }
-        } else {
-            this.zoom = canvas.width / this.size[0];
-            this.view[2] = canvas.height / this.zoom;
-            this.view[3] = canvas.width  / this.zoom;
-        }
-
-        // Sort objects by z depth, highest first
-        this.objects.sort(function(a, b) {
-            if (!("z" in a)) {
-                a.z = 0;
-            }
-            if (!("z" in b)) {
-                b.z = 0;
-            }
-            return b.z - a.z;
-        });
-
-        for (var i = 0; i < this.objects.length; i++) {
-            var o = this.objects[i];
-            if (!("draw" in o)) {
-                // Non-drawable object
-                continue;
-            }
-            if ("hidden" in o && o.hidden) {
-                continue;
-            }
-            if ("alpha" in o) {
-                if (o.alpha <= 0) {
-                    // invisible, don't draw
-                    continue;
-                } else {
-                    ctx.globalAlpha = o.alpha;
-                }
-            } else {
-                ctx.globalAlpha = 1;
-            }
-            if ('size' in o) {
-                var visible =
-                    (o.pos[0] + o.size[0] > this.view[0]) &&
-                    (o.pos[1] + o.size[1] > this.view[1]) &&
-                    (o.pos[0] < this.view[0] + this.view[2]) &&
-                    (o.pos[1] < this.view[1] + this.view[3]);
-                if (visible) {
-                    var zoom = this.zoom;
-                    var box = [zoom * (o.pos[0] - this.view[0]),
-                               zoom * (o.pos[1] - this.view[1]),
-                               zoom * o.size[0],
-                               zoom * o.size[1]];
-                    if (o.draw && !o.hidden) {
-                        o.draw(box);
-                    }
-                    if (this.drawBoundingBoxes && 'pos' in o && 'size' in o) {
-                        ctx.strokeStyle = "green";
-                        ctx.strokeRect(box[0], box[1], box[2], box[3]);
-                    }
-                }
-            } else {
-                // dimensionless object to draw
-                o.draw([0, 0, canvas.width, canvas.height]);
-            }
-        }
-
-        // Draw UI elements over the rest of the screen
-        for (var i = 0; i < this.uiObjects.length; i++) {
-            if (!this.uiObjects[i].hidden) {
-                this.uiObjects[i].draw();
-            }
-        }
-
-        return;
-    },
-    "update" : function(delta_ms) {
-        for (var i = 0; i < this.objects.length; i++) {
-            if ('update' in this.objects[i]) {
-                this.objects[i].update(delta_ms, this);
-            }
-        }
-        return;
-    },
-    "getObjectsInBox" : function (box) {
-        var result = [];
-        OBJECT:
-        for (var i = 0; i < this.objects.length; i++) {
-            var o = this.objects[i];
-            if (!("pos" in o) || !("size" in o)) {
-                continue OBJECT;
-            }
-            for (var dim = 0; dim < 2; dim++) {
-                if (o.pos[dim] + o.size[dim] < box[dim]) {
-                    continue OBJECT;
-                } else if (o.pos[dim] > box[dim] + box[dim+2]) {
-                    continue OBJECT;
-                }
-            }
-            // Not outside of box
-            result.push(o);
-        }
-        return result;
-    },
-    "removeObject" : function (o) {
-        var i = 0;
-        while (i < this.objects.length) {
-            if (this.objects[i] === o) {
-                this.objects.splice(i, 1);
-            } else {
-                i++;
-            }
-        }
-        return;
-    },
-    "addObjectOnGround" : function(o) {
-        o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
-        this.objects.push(o);
-    },
-    initializeWorld: function() {
-        // Reset objects
-        this.objects = [];
-
-        // Add bounding box around world to keep physics objects in.
-        this.objects.push(createInvisibleBoundingBox([-1,            -1], [this.size[0] + 2, 2], 1));
-        this.objects.push(createInvisibleBoundingBox([-1, this.size[0]], [this.size[0] + 2, 2], 1));
-        this.objects.push(createInvisibleBoundingBox([-1,            -1], [2, this.size[1] + 2], 1));
-        this.objects.push(createInvisibleBoundingBox([this.size[0], -1], [2, this.size[1] + 2], 1));
-        
-        this.objects.push(createStarField(0, 0, this.size[0], this.size[1], this.size[0] * this.size[1] / 100));
-        
-        // Bottom 10% of world is ground
-        this.objects.push(createGroundBackground(0, this.size[1] - 0.1 * this.size[1], this.size[0], 0.1 * this.size[1]));
-        
-        // Bottom 5% is collision box for ground. Ground is moderately bouncy
-        this.objects.push(createInvisibleBoundingBox([0, 0.95 * this.size[1]], [this.size[0], 0.05 * this.size[1]], .75));
-
-        //
-        // Decorative foreground stuff
-        //
-    
-        var fenceSegments = Math.floor(this.size[0] / 2);
-        for (var i = 0; i < fenceSegments; i++) {
-            if (Math.random() > 0.1) {
-                this.objects.push(createFence(2 * i, 0.95 * this.size[1] - 0.25, 2, 1));
-            }
-        }
-        
-        var numSilos = Math.floor(this.size[0] / 40);
-        for (var i = 0; i < numSilos; i++) {
-            var width  = 5;
-            var height = 10;
-            this.objects.push(createSilo(Math.random() * this.size[0] - width / 2,
-                                          10 + Math.random() * 100,
-                                          width, height, this));
-        }
-
-        {
-            var width  = 15;
-            var height = 12;
-            var depth  = 10;
-            this.objects.push(...createBarn(
-                Math.random() * this.size[0] - width / 2, 0.95 * this.size[1] - height, 5,
-                width, height, depth));
-        }
-        
-        // Atmosphere covers entire screen.
-        this.objects.push(createAtmosphere(0, 0, this.size[0], this.size[1]));
-    
-        return;
-    },
-    "startGame" : function() {
-
-        // Create cows
-        for (var i = 0; i < 10; i++) {
-            this.addObjectOnGround(createCow());
-        }
-        for (var i = 0; i < 5; i++) {
-            this.addObjectOnGround(createHayBale());
-        }
-        this.objects.push(createCowGenerator());
-        return;
-
-    }
-};
-
-starterWorld.initializeWorld();
 
 function drawHayBale (box) {
     var x = box[0];
@@ -1743,7 +1442,6 @@ hayBaleButton.handleClick = function (x, y, world) {
 };
 hayBaleButton.hidden = true;
 gameHudButtons.push(hayBaleButton);
-starterWorld.uiObjects.push(hayBaleButton);
 
 var cowIcon = createCow();
 var cowButton = createUIObjectButton([canvas.width / 2 + 50, canvas.height - 40], [30, 30], cowIcon);
@@ -1754,7 +1452,310 @@ cowButton.handleClick = function (x, y, world) {
 };
 cowButton.hidden = true;
 gameHudButtons.push(cowButton);
-starterWorld.uiObjects.push(cowButton);
+
+var w = 200;
+var h = 100;
+
+var starterWorld = {
+    "size" : [w, h],
+    "objects" : [],
+    "uiObjects" : [],
+    // pixels / m
+    // Initial value is width of screen.
+    "zoom" : canvas.width / w,
+    "view" : [0, 0, w, h],
+    // in m/s
+    "g" : 9.8,
+    "focus" : null,
+    "drawBoundingBoxes" : false,
+    handleMouseMove : function(relativeX, relativeY) {
+        // Convert to world space
+        var x = relativeX / this.zoom + this.view[0];
+        var y = relativeY / this.zoom + this.view[1];
+
+        for (var i = 0; i < this.objects.length; i++) {
+            if (this.objects[i].handleMouseMove) {
+                this.objects[i].handleMouseMove(x, y);
+            }
+        }
+
+        return;
+    },
+    handleClick: function(relativeX, relativeY) {
+        // First see if we clicked on a ui element
+        for (var i = 0; i < this.uiObjects.length; i++) {
+            if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
+                if (this.uiObjects[i].inBox(relativeX, relativeY)) {
+                    this.uiObjects[i].handleClick(relativeX, relativeY, this);
+                    return;
+                }
+            }
+        }
+
+        // Now check game objects
+        var x = relativeX / this.zoom + this.view[0];
+        var y = relativeY / this.zoom + this.view[1];
+        for (var i = 0; i < this.objects.length; i++) {
+            if ("handleClick" in this.objects[i]) {
+                this.objects[i].handleClick(x, y, this);
+            }
+        }
+
+        return;
+    },
+    handleKeyDown : function(e) {
+        if(e.keyCode == 66) {
+            // pushed b
+            this.drawBoundingBoxes = true;
+        } else {
+            // Pass along to objects
+            for (var i = 0; i < this.objects.length; i++) {
+                if (this.objects[i].handleKeyDown) {
+                    this.objects[i].handleKeyDown(e, this);
+                }
+            }
+        }
+        return;
+    },
+    handleKeyUp : function(e) {
+        if(e.keyCode == 66) {
+            // pushed b
+            this.drawBoundingBoxes = false;
+        } else {
+            // Pass along to objects
+            for (var i = 0; i < this.objects.length; i++) {
+                if (this.objects[i].handleKeyUp) {
+                    this.objects[i].handleKeyUp(e, this);
+                }
+            }
+        }
+        return;
+    },
+    "draw": function() {
+        // console.log("drawing world");
+
+        // Update viewport to keep focus item in center 1/2 of screen if possible
+        if (this.focus) {
+            // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
+
+            this.zoom = 100 / this.focus.size[0];
+            //  *
+            //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
+            // if (this.zoom < 1) {
+            //     this.zoom = 1;
+            // } else if (this.zoom > 5) {
+            //     this.zoom = 5;
+            // }
+            this.view[2] = canvas.width  / this.zoom;
+            this.view[3] = canvas.height / this.zoom;
+
+            // Now center view. Desired state is for view and focus to have same center:
+            //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
+            // or
+            //   this.view[i] = focus.pos[i] + focus.size[i] / 2 - this.view[i+2]/2
+            //
+            // For stability, only correct if desired position is more than 1/4 of the screen away,
+            // and then, only as much as is needed to be that far.
+            for (var i = 0; i < 2; i++) {
+                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2]/2;
+                if (this.view[i] < desiredViewPos - this.view[i+2] / 4) {
+                    this.view[i] = desiredViewPos - this.view[i+2] / 4;
+                }
+                if (this.view[i] > desiredViewPos + this.view[i+2] / 4) {
+                    this.view[i] = desiredViewPos + this.view[i+2] / 4;
+                }
+                // Make sure view is legal
+                if (this.view[i] < 0) {
+                    this.view[i] = 0;
+                }
+                if (this.view[i] + this.view[i+2] > this.size[i]) {
+                    this.view[i] = this.size[i] - this.view[i+2];
+                }
+            }
+        } else {
+            this.zoom = canvas.width / this.size[0];
+            this.view[2] = canvas.height / this.zoom;
+            this.view[3] = canvas.width  / this.zoom;
+        }
+
+        // Sort objects by z depth, highest first
+        this.objects.sort(function(a, b) {
+            if (!("z" in a)) {
+                a.z = 0;
+            }
+            if (!("z" in b)) {
+                b.z = 0;
+            }
+            return b.z - a.z;
+        });
+
+        for (var i = 0; i < this.objects.length; i++) {
+            var o = this.objects[i];
+            if (!("draw" in o)) {
+                // Non-drawable object
+                continue;
+            }
+            if ("hidden" in o && o.hidden) {
+                continue;
+            }
+            if ("alpha" in o) {
+                if (o.alpha <= 0) {
+                    // invisible, don't draw
+                    continue;
+                } else {
+                    ctx.globalAlpha = o.alpha;
+                }
+            } else {
+                ctx.globalAlpha = 1;
+            }
+            if ('size' in o) {
+                var visible =
+                    (o.pos[0] + o.size[0] > this.view[0]) &&
+                    (o.pos[1] + o.size[1] > this.view[1]) &&
+                    (o.pos[0] < this.view[0] + this.view[2]) &&
+                    (o.pos[1] < this.view[1] + this.view[3]);
+                if (visible) {
+                    var zoom = this.zoom;
+                    var box = [zoom * (o.pos[0] - this.view[0]),
+                               zoom * (o.pos[1] - this.view[1]),
+                               zoom * o.size[0],
+                               zoom * o.size[1]];
+                    if (o.draw && !o.hidden) {
+                        o.draw(box);
+                    }
+                    if (this.drawBoundingBoxes && 'pos' in o && 'size' in o) {
+                        ctx.strokeStyle = "green";
+                        ctx.strokeRect(box[0], box[1], box[2], box[3]);
+                    }
+                }
+            } else {
+                // dimensionless object to draw
+                o.draw([0, 0, canvas.width, canvas.height]);
+            }
+        }
+
+        // Draw UI elements over the rest of the screen
+        for (var i = 0; i < this.uiObjects.length; i++) {
+            if (!this.uiObjects[i].hidden) {
+                this.uiObjects[i].draw();
+            }
+        }
+
+        return;
+    },
+    "update" : function(delta_ms) {
+        for (var i = 0; i < this.objects.length; i++) {
+            if ('update' in this.objects[i]) {
+                this.objects[i].update(delta_ms, this);
+            }
+        }
+        return;
+    },
+    "getObjectsInBox" : function (box) {
+        var result = [];
+        OBJECT:
+        for (var i = 0; i < this.objects.length; i++) {
+            var o = this.objects[i];
+            if (!("pos" in o) || !("size" in o)) {
+                continue OBJECT;
+            }
+            for (var dim = 0; dim < 2; dim++) {
+                if (o.pos[dim] + o.size[dim] < box[dim]) {
+                    continue OBJECT;
+                } else if (o.pos[dim] > box[dim] + box[dim+2]) {
+                    continue OBJECT;
+                }
+            }
+            // Not outside of box
+            result.push(o);
+        }
+        return result;
+    },
+    "removeObject" : function (o) {
+        var i = 0;
+        while (i < this.objects.length) {
+            if (this.objects[i] === o) {
+                this.objects.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
+        return;
+    },
+    "addObjectOnGround" : function(o) {
+        o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
+        this.objects.push(o);
+    },
+    initializeWorld: function() {
+        // Reset objects
+        this.objects = [];
+
+        // Add bounding box around world to keep physics objects in.
+        this.objects.push(createInvisibleBoundingBox([-1,            -1], [this.size[0] + 2, 2], 1));
+        this.objects.push(createInvisibleBoundingBox([-1, this.size[0]], [this.size[0] + 2, 2], 1));
+        this.objects.push(createInvisibleBoundingBox([-1,            -1], [2, this.size[1] + 2], 1));
+        this.objects.push(createInvisibleBoundingBox([this.size[0], -1], [2, this.size[1] + 2], 1));
+        
+        this.objects.push(createStarField(0, 0, this.size[0], this.size[1], this.size[0] * this.size[1] / 100));
+        
+        // Bottom 10% of world is ground
+        this.objects.push(createGroundBackground(0, this.size[1] - 0.1 * this.size[1], this.size[0], 0.1 * this.size[1]));
+        
+        // Bottom 5% is collision box for ground. Ground is moderately bouncy
+        this.objects.push(createInvisibleBoundingBox([0, 0.95 * this.size[1]], [this.size[0], 0.05 * this.size[1]], .75));
+
+        //
+        // Decorative foreground stuff
+        //
+    
+        var fenceSegments = Math.floor(this.size[0] / 2);
+        for (var i = 0; i < fenceSegments; i++) {
+            if (Math.random() > 0.1) {
+                this.objects.push(createFence(2 * i, 0.95 * this.size[1] - 0.25, 2, 1));
+            }
+        }
+        
+        var numSilos = Math.floor(this.size[0] / 40);
+        for (var i = 0; i < numSilos; i++) {
+            var width  = 5;
+            var height = 10;
+            this.objects.push(createSilo(Math.random() * this.size[0] - width / 2,
+                                          10 + Math.random() * 100,
+                                          width, height, this));
+        }
+
+        {
+            var width  = 15;
+            var height = 12;
+            var depth  = 10;
+            this.objects.push(...createBarn(
+                Math.random() * this.size[0] - width / 2, 0.95 * this.size[1] - height, 5,
+                width, height, depth));
+        }
+        
+        // Atmosphere covers entire screen.
+        this.objects.push(createAtmosphere(0, 0, this.size[0], this.size[1]));
+    
+        return;
+    },
+    "startGame" : function() {
+
+        // Create cows
+        for (var i = 0; i < 10; i++) {
+            this.addObjectOnGround(createCow());
+        }
+        for (var i = 0; i < 5; i++) {
+            this.addObjectOnGround(createHayBale());
+        }
+        this.objects.push(createCowGenerator());
+        return;
+
+    }
+};
+
+starterWorld.initializeWorld();
+
+starterWorld.uiObjects.push(...gameHudButtons);
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
