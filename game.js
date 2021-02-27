@@ -33,16 +33,17 @@ function inBox (x, y) {
             && y > this.pos[1] && y < this.pos[1] + this.size[1]);                  ;
 }
 
-function createUIObject (pos, size) {
+function createUIObject (pos, z, size) {
     return {
         pos : [...pos],
+        z : z,
         size : [...size],
         hidden : false,
         inBox : inBox
     };
 }
-function createUIButton (pos, size) {
-    var o = createUIObject(pos, size);
+function createUIButton (pos, z, size) {
+    var o = createUIObject(pos, z, size);
     o.draw = function () {
         ctx.fillStyle = "#000a";
         ctx.fillRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
@@ -53,8 +54,8 @@ function createUIButton (pos, size) {
     return o;
 }
 
-function createUITextButton (pos, size, text) {
-    var o = createUIButton(pos, size);
+function createUITextButton (pos, z, size, text) {
+    var o = createUIButton(pos, z, size);
     o.text = text;
     o.drawIcon = function (box) {
         ctx.font = "20px Arial";
@@ -66,8 +67,8 @@ function createUITextButton (pos, size, text) {
     return o;
 }
 
-function createUIObjectButton (pos, size, iconObject) {
-    var o = createUIButton(pos, size);
+function createUIObjectButton (pos, z, size, iconObject) {
+    var o = createUIButton(pos, z, size);
     o.iconObject = iconObject;
     o.drawIcon = function (box) {
         this.iconObject.draw(box);
@@ -1433,8 +1434,10 @@ function createCowGenerator () {
     return cowGenerator;
 }
 
+const gameHudZ = 0;
+
 var hayBaleIcon = createHayBale();
-var hayBaleButton = createUIObjectButton([canvas.width / 2, canvas.height - 40], [30, 30], hayBaleIcon);
+var hayBaleButton = createUIObjectButton([canvas.width / 2, canvas.height - 40], gameHudZ, [30, 30], hayBaleIcon);
 hayBaleButton.handleClick = function (x, y, world) {
     if (world.focus != null) {
         world.focus.addHayBale(world);
@@ -1444,7 +1447,7 @@ hayBaleButton.hidden = true;
 gameHudButtons.push(hayBaleButton);
 
 var cowIcon = createCow();
-var cowButton = createUIObjectButton([canvas.width / 2 + 50, canvas.height - 40], [30, 30], cowIcon);
+var cowButton = createUIObjectButton([canvas.width / 2 + 50, canvas.height - 40], gameHudZ, [30, 30], cowIcon);
 cowButton.handleClick = function (x, y, world) {
     if (world.focus != null) {
         world.focus.addCow(world);
@@ -1765,7 +1768,8 @@ var paused = false;
 
 var last_now_ms = performance.now();
 
-var pauseButton = createUITextButton ([canvas.width - 40, 10], [30, 30], '⏸');
+var overlayZ = -5;
+var pauseButton = createUITextButton ([canvas.width - 40, 10], overlayZ, [30, 30], '⏸');
 pauseButton.handleClick = function (x, y, world) {
     startPause();
 };
@@ -1773,7 +1777,7 @@ pauseButton.hidden = true;
 starterWorld.uiObjects.push(pauseButton);
 gameHudButtons.push(pauseButton);
 
-var pauseScreen = createUIObject([0, 0], [canvas.width, canvas.height]);
+var pauseScreen = createUIObject([0, 0], overlayZ, [canvas.width, canvas.height]);
 pauseScreen.draw = function (x, y) {
     ctx.fillStyle = "#0009";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1793,7 +1797,7 @@ pauseScreen.handleClick = function (x, y) {
 pauseScreen.hidden = true;
 starterWorld.uiObjects.push(pauseScreen);
 
-var splashScreen = createUIObject([0, 0], [canvas.width, canvas.height]);
+var splashScreen = createUIObject([0, 0], overlayZ, [canvas.width, canvas.height]);
 splashScreen.draw = function(view) {
     ctx.fillStyle = "#0009";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
