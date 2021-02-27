@@ -605,7 +605,7 @@ var starterWorld = {
 
         return;
     },
-    handleClick : function(relativeX, relativeY) {
+    handleClick: function(relativeX, relativeY) {
         // First see if we clicked on a ui element
         for (var i = 0; i < this.uiObjects.length; i++) {
             if (!this.uiObjects[i].hidden && "handleClick" in this.uiObjects[i]) {
@@ -810,7 +810,60 @@ var starterWorld = {
         o.pos = [Math.random() * (this.size[0] - o.size[0]), 0.9 * this.size[1] - o.size[1] - 0.1];
         this.objects.push(o);
     },
+    initializeWorld: function() {
+        // Reset objects
+        this.objects = [];
+
+        // Add bounding box around world to keep physics objects in.
+        this.objects.push(createInvisibleBoundingBox([-1,            -1], [this.size[0] + 2, 2], 1));
+        this.objects.push(createInvisibleBoundingBox([-1, this.size[0]], [this.size[0] + 2, 2], 1));
+        this.objects.push(createInvisibleBoundingBox([-1,            -1], [2, this.size[1] + 2], 1));
+        this.objects.push(createInvisibleBoundingBox([this.size[0], -1], [2, this.size[1] + 2], 1));
+        
+        this.objects.push(createStarField(0, 0, this.size[0], this.size[1], this.size[0] * this.size[1] / 100));
+        
+        // Bottom 10% of world is ground
+        this.objects.push(createGroundBackground(0, this.size[1] - 0.1 * this.size[1], this.size[0], 0.1 * this.size[1]));
+        
+        // Bottom 5% is collision box for ground. Ground is moderately bouncy
+        this.objects.push(createInvisibleBoundingBox([0, 0.95 * this.size[1]], [this.size[0], 0.05 * this.size[1]], .75));
+
+        //
+        // Decorative foreground stuff
+        //
+    
+        var fenceSegments = Math.floor(this.size[0] / 2);
+        for (var i = 0; i < fenceSegments; i++) {
+            if (Math.random() > 0.1) {
+                this.objects.push(createFence(2 * i, 0.95 * this.size[1] - 0.25, 2, 1));
+            }
+        }
+        
+        var numSilos = Math.floor(this.size[0] / 40);
+        for (var i = 0; i < numSilos; i++) {
+            var width  = 5;
+            var height = 10;
+            this.objects.push(createSilo(Math.random() * this.size[0] - width / 2,
+                                          10 + Math.random() * 100,
+                                          width, height, this));
+        }
+
+        {
+            var width  = 15;
+            var height = 12;
+            var depth  = 10;
+            this.objects.push(...createBarn(
+                Math.random() * this.size[0] - width / 2, 0.95 * this.size[1] - height, 5,
+                width, height, depth));
+        }
+        
+        // Atmosphere covers entire screen.
+        this.objects.push(createAtmosphere(0, 0, this.size[0], this.size[1]));
+    
+        return;
+    },
     "startGame" : function() {
+
         // Create cows
         for (var i = 0; i < 10; i++) {
             this.addObjectOnGround(createCow());
@@ -820,58 +873,11 @@ var starterWorld = {
         }
         this.objects.push(createCowGenerator());
         return;
+
     }
 };
 
-function initializeStartWorld (world) {
-    // Add bounding box around world to keep physics objects in.
-    world.objects.push(createInvisibleBoundingBox([-1,            -1], [world.size[0] + 2, 2], 1));
-    world.objects.push(createInvisibleBoundingBox([-1, world.size[0]], [world.size[0] + 2, 2], 1));
-    world.objects.push(createInvisibleBoundingBox([-1,            -1], [2, world.size[1] + 2], 1));
-    world.objects.push(createInvisibleBoundingBox([world.size[0], -1], [2, world.size[1] + 2], 1));
-    
-    world.objects.push(createStarField(0, 0, world.size[0], world.size[1], world.size[0] * world.size[1] / 100));
-    
-    // Bottom 10% of world is ground
-    world.objects.push(createGroundBackground(0, world.size[1] - 0.1 * world.size[1], world.size[0], 0.1 * world.size[1]));
-    
-    // Bottom 5% is collision box for ground. Ground is moderately bouncy
-    world.objects.push(createInvisibleBoundingBox([0, 0.95 * world.size[1]], [world.size[0], 0.05 * world.size[1]], .75));
-
-    //
-    // Decorative foreground stuff
-    //
-    
-    var fenceSegments = Math.floor(world.size[0] / 2);
-    for (var i = 0; i < fenceSegments; i++) {
-        if (Math.random() > 0.1) {
-            world.objects.push(createFence(2 * i, 0.95 * world.size[1] - 0.25, 2, 1));
-        }
-    }
-    
-    var numSilos = Math.floor(world.size[0] / 40);
-    for (var i = 0; i < numSilos; i++) {
-        var width  = 5;
-        var height = 10;
-        world.objects.push(createSilo(Math.random() * world.size[0] - width / 2,
-                                      10 + Math.random() * 100,
-                                      width, height, world));
-    }
-    
-    {
-        var width  = 15;
-        var height = 12;
-        var depth  = 10;
-        world.objects.push(...createBarn(
-            Math.random() * world.size[0] - width / 2, 0.95 * world.size[1] - height, 5,
-            width, height, depth));
-    }
-    
-    // Atmosphere covers entire screen.
-    world.objects.push(createAtmosphere(0, 0, world.size[0], world.size[1]));
-}
-
-initializeStartWorld(starterWorld);
+starterWorld.initializeWorld();
 
 function drawHayBale (box) {
     var x = box[0];
