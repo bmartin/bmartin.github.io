@@ -1470,6 +1470,9 @@ var starterWorld = {
     // in m/s
     "g" : 9.8,
     "focus" : null,
+    "focusWidthPixels" : null,
+    "focusGoalWidthPixels" : null,
+    "focusZoom_ms" : 0,
     "drawBoundingBoxes" : false,
     handleMouseMove : function(relativeX, relativeY) {
         // Convert to world space
@@ -1541,7 +1544,19 @@ var starterWorld = {
         if (this.focus) {
             // First, adjust zoom based on bottom of focus object, such that object width is 100 at bottom and 50 at top.
 
-            this.zoom = 100 / this.focus.size[0];
+            var newZoom = Math.max(this.focusWidthPixels / this.focus.size[0], canvas.width / this.size[0]);
+            if (newZoom != this.zoom) {
+                // Zoom changed, do a symmetric change to current position
+                var newWidth = canvas.width  / this.zoom;
+                var newHeight = canvas.height / this.zoom;
+                
+                this.zoom = newZoom;
+                this.view = [
+                    this.view[0] + (this.view[2] - newWidth) / 2,
+                    this.view[1] + (this.view[3] - newHeight) / 2,
+                    newWidth, newHeight];
+            }
+    
             //  *
             //     (1 + (1-(this.size[1] - this.focus.pos[1] - this.focus.size[1]) / this.size[1]));
             // if (this.zoom < 1) {
@@ -1549,8 +1564,6 @@ var starterWorld = {
             // } else if (this.zoom > 5) {
             //     this.zoom = 5;
             // }
-            this.view[2] = canvas.width  / this.zoom;
-            this.view[3] = canvas.height / this.zoom;
 
             // Now center view. Desired state is for view and focus to have same center:
             //   this.view[i] + this.view[i+2]/2 = focus.pos[i] + focus.size[i] / 2
@@ -1560,7 +1573,7 @@ var starterWorld = {
             // For stability, only correct if desired position is more than 1/4 of the screen away,
             // and then, only as much as is needed to be that far.
             for (var i = 0; i < 2; i++) {
-                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2]/2;
+                var desiredViewPos = this.focus.pos[i] + this.focus.size[i] / 2 - this.view[i+2] / 2;
                 if (this.view[i] < desiredViewPos - this.view[i+2] / 4) {
                     this.view[i] = desiredViewPos - this.view[i+2] / 4;
                 }
@@ -1647,11 +1660,32 @@ var starterWorld = {
         return;
     },
     "update" : function(delta_ms) {
+
+        // Animate zoom on focus
+        if (this.focusZoom_ms > 0) {
+            if (delta_ms >= this.focusZoom_ms) {
+                this.focusWidthPixels = this.focusGoalWidthPixels;
+                this.focusZoom_ms = 0;
+            } else {
+                this.focusWidthPixels = this.focusWidthPixels + (this.focusGoalWidthPixels - this.focusWidthPixels) * delta_ms / this.focusZoom_ms;
+                this.focusZoom_ms = this.focusZoom_ms - delta_ms;
+            }
+        } 
+
+        // Update all objects
         for (var i = 0; i < this.objects.length; i++) {
             if ('update' in this.objects[i]) {
                 this.objects[i].update(delta_ms, this);
             }
         }
+
+        // Handle game over
+        if (this.focus) {
+            if (this.focus.health <= 0) {
+                this.endGame();
+            }
+        }
+
         return;
     },
     "getObjectsInBox" : function (box) {
@@ -1757,11 +1791,28 @@ var starterWorld = {
         // Initial ship is 5m in center of world
         var ship = createShip(5, [this.size[0] / 2, this.size[1] / 2]);
         this.objects.push(ship);
-        this.focus = ship;
 
+        // Set world focus on ship and zoom to it over a second
+        this.focus = ship;
+        this.focusWidthPixels = canvas.width * this.focus.size[0] / this.size[0];
+        this.focusGoalWidthPixels = 100;
+        this.focusZoom_ms = 2000;
+        
         for (var i = 0; i < this.gameHudButtons.length; i++) {
             this.gameHudButtons[i].hidden = false;
         }
+        
+        return;
+    },
+    endGame : function() {
+        // hide HUD BUTTONS
+        for (var i = 0; i < this.gameHudButtons.length; i++) {
+            this.gameHudButtons[i].hidden = true;
+        }
+        
+        // Start zooming out
+        this.focusGoalWidthPixels = canvas.width * this.focus.size[0] / this.size[0];
+        this.focusZoom_ms = 3000;
 
         return;
     }
