@@ -1741,8 +1741,10 @@ var starterWorld = {
     
         return;
     },
-    "startGame" : function() {
+    gameHudButtons : [],
+    startGame : function() {
 
+        
         // Create cows
         for (var i = 0; i < 10; i++) {
             this.addObjectOnGround(createCow());
@@ -1751,13 +1753,23 @@ var starterWorld = {
             this.addObjectOnGround(createHayBale());
         }
         this.objects.push(createCowGenerator());
-        return;
 
+        // Initial ship is 5m in center of world
+        var ship = createShip(5, [this.size[0] / 2, this.size[1] / 2]);
+        this.objects.push(ship);
+        this.focus = ship;
+
+        for (var i = 0; i < this.gameHudButtons.length; i++) {
+            this.gameHudButtons[i].hidden = false;
+        }
+
+        return;
     }
 };
 
 starterWorld.initializeWorld();
 
+starterWorld.gameHudButtons.push(...gameHudButtons);
 starterWorld.uiObjects.push(...gameHudButtons);
 
 document.addEventListener("keydown", keyDownHandler, false);
@@ -1769,15 +1781,17 @@ var paused = false;
 var last_now_ms = performance.now();
 
 var overlayZ = -5;
+
 var pauseButton = createUITextButton ([canvas.width - 40, 10], overlayZ, [30, 30], '⏸');
 pauseButton.handleClick = function (x, y, world) {
     startPause();
 };
 pauseButton.hidden = true;
-starterWorld.uiObjects.push(pauseButton);
-gameHudButtons.push(pauseButton);
+starterWorld.gameHudButtons.push(pauseButton);
+
 
 var pauseScreen = createUIObject([0, 0], overlayZ, [canvas.width, canvas.height]);
+pauseScreen.hidden = true;
 pauseScreen.draw = function (x, y) {
     ctx.fillStyle = "#0009";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1789,13 +1803,14 @@ pauseScreen.draw = function (x, y) {
     ctx.textAlign = "center";
     ctx.strokeText("Paused", canvas.width/2, canvas.height/2);
 };
-
 pauseScreen.handleClick = function (x, y) {
     endPause();
     this.hidden = true;
 };
-pauseScreen.hidden = true;
 starterWorld.uiObjects.push(pauseScreen);
+
+// Start with all hud buttons hidden
+starterWorld.uiObjects.push(...starterWorld.gameHudButtons);
 
 var splashScreen = createUIObject([0, 0], overlayZ, [canvas.width, canvas.height]);
 splashScreen.draw = function(view) {
@@ -1816,14 +1831,6 @@ splashScreen.draw = function(view) {
 };
 splashScreen.handleClick = function(x, y, world) {
     this.hidden = true;
-
-    // Initial ship is 5m in center of world
-    var ship = createShip(5, [world.size[0] / 2, world.size[1] / 2]);
-    world.objects.push(ship);
-    world.focus = ship;
-    for (var i = 0; i < gameHudButtons.length; i++) {
-        gameHudButtons[i].hidden = false;
-    }
 
     world.startGame();
     return;
